@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Nunito } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/layout/Header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +12,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Font bo tròn, ấm áp, phù hợp thương hiệu mẹ & bé — có hỗ trợ dấu tiếng Việt
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin", "vietnamese"],
@@ -36,7 +34,6 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--brand-cream)] text-[var(--brand-text)]">
-        <Header />
         {children}
       </body>
     </html>

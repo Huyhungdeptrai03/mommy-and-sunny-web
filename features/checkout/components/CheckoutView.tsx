@@ -28,9 +28,11 @@ export default function CheckoutView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [orderResult, setOrderResult] = useState<{ orderCode: string; totalAmount: number } | null>(
-    null
-  );
+  const [orderResult, setOrderResult] = useState<{
+    orderCode: string;
+    totalAmount: number;
+    paymentUrl?: string | null;
+  } | null>(null);
 
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [newAddress, setNewAddress] = useState({
@@ -102,8 +104,16 @@ export default function CheckoutView() {
         paymentMethod,
         customerNote: customerNote || undefined,
       });
-      setOrderResult(result);
       setItemCount(0);
+
+      // Có paymentUrl (chọn thanh toán MoMo và MoMo trả về link hợp lệ) —
+      // chuyển hướng NGAY LẬP TỨC sang trang MoMo, không hiện màn hình "thành công" trung gian
+      if (result.paymentUrl) {
+        window.location.href = result.paymentUrl;
+        return;
+      }
+
+      setOrderResult(result);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
         setError(err.response.data.message);
@@ -142,6 +152,12 @@ export default function CheckoutView() {
         <p className="text-[var(--brand-text)]">
           Tổng tiền: <span className="font-semibold">{formatCurrency(orderResult.totalAmount)}</span>
         </p>
+        {paymentMethod === "Momo" && !orderResult.paymentUrl && (
+          <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+            Đơn hàng đã được tạo, nhưng không thể kết nối tới MoMo lúc này. Vui lòng vào mục
+            &ldquo;Đơn hàng&rdquo; để thử thanh toán lại, hoặc liên hệ hỗ trợ.
+          </p>
+        )}
         <button
           onClick={() => router.push("/")}
           className="mt-8 bg-[var(--brand-olive)] text-white font-semibold px-8 py-3 rounded-full hover:opacity-90 transition-opacity"

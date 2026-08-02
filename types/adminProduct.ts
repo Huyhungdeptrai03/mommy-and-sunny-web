@@ -23,6 +23,8 @@ export interface ProductVariantAdmin {
   size: string | null;
   color: string | null;
   price: number;
+  compareAtPrice: number | null;
+  saleEndsAt: string | null;
   stockQuantity: number;
   reservedQuantity: number;
   availableQuantity: number;

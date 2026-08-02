@@ -69,7 +69,15 @@ export async function deleteProductImage(productId: string, imageId: string): Pr
 
 export async function addProductVariant(
   productId: string,
-  payload: { sku: string; size?: string; color?: string; price: number; stockQuantity: number }
+  payload: {
+    sku: string;
+    size?: string;
+    color?: string;
+    price: number;
+    stockQuantity: number;
+    compareAtPrice?: number | null;
+    saleEndsAt?: string | null;
+  }
 ): Promise<ProductVariantAdmin> {
   const res = await apiClient.post<ApiResponse<ProductVariantAdmin>>(
     `/admin/products/${productId}/variants`,
@@ -80,7 +88,15 @@ export async function addProductVariant(
 
 export async function updateProductVariant(
   variantId: string,
-  payload: { sku: string; size?: string; color?: string; price: number; stockQuantity: number }
+  payload: {
+    sku: string;
+    size?: string;
+    color?: string;
+    price: number;
+    stockQuantity: number;
+    compareAtPrice?: number | null;
+    saleEndsAt?: string | null;
+  }
 ): Promise<ProductVariantAdmin> {
   const res = await apiClient.put<ApiResponse<ProductVariantAdmin>>(
     `/admin/variants/${variantId}`,

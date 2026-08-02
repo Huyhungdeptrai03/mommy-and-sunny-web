@@ -1,0 +1,96 @@
+"use client";
+
+import { useState, FormEvent } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import axios from "axios";
+import { resetPassword } from "@/features/auth/api";
+
+export default function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const inputClass =
+    "w-full border border-[var(--brand-border)] rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:border-[var(--brand-olive)] transition-colors";
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!token) {
+      setError("Thiếu mã đặt lại mật khẩu trong đường dẫn");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await resetPassword(token, newPassword);
+      setSuccess(true);
+      setTimeout(() => router.push("/login"), 2000);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Không thể đặt lại mật khẩu, vui lòng thử lại");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="min-h-[70vh] flex items-center justify-center px-6 py-12 bg-[var(--brand-cream)]">
+      <div className="w-full max-w-sm bg-white rounded-[28px] p-8 shadow-[0_25px_60px_-20px_rgba(58,54,47,0.25)]">
+        <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)] mb-2">
+          Đặt lại mật khẩu
+        </h1>
+
+        {success ? (
+          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl p-3">
+            Đặt lại mật khẩu thành công! Đang chuyển đến trang đăng nhập...
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+                {error}
+              </p>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-[var(--brand-text-muted)] mb-1">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[var(--brand-olive)] text-white rounded-full py-3 font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {isSubmitting ? "Đang lưu..." : "Đặt lại mật khẩu"}
+            </button>
+          </form>
+        )}
+
+        <p className="text-sm text-center text-[var(--brand-text-muted)] mt-6">
+          <Link href="/login" className="text-[var(--brand-olive)] font-medium underline">
+            Quay lại đăng nhập
+          </Link>
+        </p>
+      </div>
+    </main>
+  );
+}

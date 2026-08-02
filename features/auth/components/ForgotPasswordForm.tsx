@@ -1,0 +1,71 @@
+"use client";
+
+import { useState, FormEvent } from "react";
+import Link from "next/link";
+import { forgotPassword } from "@/features/auth/api";
+
+export default function ForgotPasswordForm() {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const inputClass =
+    "w-full border border-[var(--brand-border)] rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:border-[var(--brand-olive)] transition-colors";
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await forgotPassword(email);
+    } finally {
+      // Luôn hiện thông báo thành công dù email có tồn tại hay không —
+      // khớp với hành vi Backend (không tiết lộ email nào đã đăng ký)
+      setSubmitted(true);
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="min-h-[70vh] flex items-center justify-center px-6 py-12 bg-[var(--brand-cream)]">
+      <div className="w-full max-w-sm bg-white rounded-[28px] p-8 shadow-[0_25px_60px_-20px_rgba(58,54,47,0.25)]">
+        <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)] mb-2">
+          Quên mật khẩu
+        </h1>
+
+        {submitted ? (
+          <p className="text-sm text-[var(--brand-text)] leading-relaxed">
+            Nếu email này đã đăng ký, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu. Vui lòng kiểm
+            tra hộp thư (và mục Spam).
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <p className="text-sm text-[var(--brand-text-muted)]">
+              Nhập email đã đăng ký, chúng tôi sẽ gửi link đặt lại mật khẩu.
+            </p>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email của bạn"
+              className={inputClass}
+            />
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[var(--brand-olive)] text-white rounded-full py-3 font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {isSubmitting ? "Đang gửi..." : "Gửi link đặt lại mật khẩu"}
+            </button>
+          </form>
+        )}
+
+        <p className="text-sm text-center text-[var(--brand-text-muted)] mt-6">
+          <Link href="/login" className="text-[var(--brand-olive)] font-medium underline">
+            Quay lại đăng nhập
+          </Link>
+        </p>
+      </div>
+    </main>
+  );
+}

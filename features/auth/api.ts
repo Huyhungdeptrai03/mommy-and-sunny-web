@@ -18,3 +18,15 @@ export async function register(payload: {
   const res = await apiClient.post<ApiResponse<RegisterResponse>>("/auth/register", payload);
   return res.data.data;
 }
+
+export async function verifyEmail(token: string): Promise<void> {
+  await apiClient.post("/auth/verify-email", { token });
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  await apiClient.post("/auth/forgot-password", { email });
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await apiClient.post("/auth/reset-password", { token, newPassword });
+}

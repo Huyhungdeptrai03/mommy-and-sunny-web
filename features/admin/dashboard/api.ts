@@ -6,10 +6,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   return res.data.data;
 }
 
-export async function getRevenueChart(days = 7): Promise<RevenueChartPoint[]> {
+export async function getRevenueChart(params?: {
+  fromDate?: string;
+  toDate?: string;
+}): Promise<RevenueChartPoint[]> {
   const res = await apiClient.get<ApiResponse<RevenueChartPoint[]>>(
     "/admin/dashboard/revenue-chart",
-    { params: { days } }
+    { params }
   );
   return res.data.data;
 }

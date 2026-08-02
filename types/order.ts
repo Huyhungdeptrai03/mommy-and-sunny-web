@@ -2,6 +2,7 @@ export interface CreateOrderResponse {
   orderCode: string;
   totalAmount: number;
   status: string;
+  paymentUrl: string | null;
 }
 
 export interface OrderListItem {
