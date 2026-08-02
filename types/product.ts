@@ -1,8 +1,6 @@
 export interface ProductImage {
-  id: string;
-  imageUrl: string;
+  url: string;
   isPrimary: boolean;
-  displayOrder: number;
 }
 
 export interface ProductVariant {
