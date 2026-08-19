@@ -24,7 +24,11 @@ export interface AdminOrderDetail {
   subTotal: number;
   shippingFee: number;
   discountAmount: number;
+  couponCode: string | null;
   totalAmount: number;
+  depositAmount: number | null;
+  depositPaymentStatus: string;
+  requiresDeposit: boolean;
   customerNote: string | null;
   createdAt: string;
   items: OrderItem[];

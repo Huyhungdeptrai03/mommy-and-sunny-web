@@ -3,12 +3,18 @@ import {
   AdminProductListItem,
   AdminProductDetail,
   ProductImageAdmin,
+  ProductSpecificationAdmin,
   ProductVariantAdmin,
 } from "@/types/adminProduct";
 
-export async function getAdminProducts(): Promise<PagedResult<AdminProductListItem>> {
+export async function getAdminProducts(params?: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}): Promise<PagedResult<AdminProductListItem>> {
   const res = await apiClient.get<ApiResponse<PagedResult<AdminProductListItem>>>(
-    "/admin/products"
+    "/admin/products",
+    { params }
   );
   return res.data.data;
 }
@@ -23,8 +29,9 @@ export async function createProduct(payload: {
   name: string;
   description?: string;
   brand?: string;
-  ageRangeMinMonths: number;
-  ageRangeMaxMonths: number;
+  ageRangeMinMonths?: number;
+  ageRangeMaxMonths?: number;
+  purchaseBatchId?: string | null;
 }): Promise<AdminProductDetail> {
   const res = await apiClient.post<ApiResponse<AdminProductDetail>>("/admin/products", payload);
   return res.data.data;
@@ -37,8 +44,9 @@ export async function updateProduct(
     name: string;
     description?: string;
     brand?: string;
-    ageRangeMinMonths: number;
-    ageRangeMaxMonths: number;
+    ageRangeMinMonths?: number;
+    ageRangeMaxMonths?: number;
+    purchaseBatchId?: string | null;
   }
 ): Promise<AdminProductDetail> {
   const res = await apiClient.put<ApiResponse<AdminProductDetail>>(
@@ -65,6 +73,24 @@ export async function addProductImage(
 
 export async function deleteProductImage(productId: string, imageId: string): Promise<void> {
   await apiClient.delete(`/admin/products/${productId}/images/${imageId}`);
+}
+
+export async function addProductSpecification(
+  productId: string,
+  payload: { label: string; value: string; displayOrder: number }
+): Promise<ProductSpecificationAdmin> {
+  const res = await apiClient.post<ApiResponse<ProductSpecificationAdmin>>(
+    `/admin/products/${productId}/specifications`,
+    payload
+  );
+  return res.data.data;
+}
+
+export async function deleteProductSpecification(
+  productId: string,
+  specificationId: string
+): Promise<void> {
+  await apiClient.delete(`/admin/products/${productId}/specifications/${specificationId}`);
 }
 
 export async function addProductVariant(

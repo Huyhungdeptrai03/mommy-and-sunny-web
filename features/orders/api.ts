@@ -4,6 +4,7 @@ import { CreateOrderResponse, OrderListItem, OrderDetail } from "@/types/order";
 export async function createOrder(payload: {
   addressId: string;
   paymentMethod: string;
+  couponCode?: string;
   customerNote?: string;
 }): Promise<CreateOrderResponse> {
   const res = await apiClient.post<ApiResponse<CreateOrderResponse>>("/orders", payload);

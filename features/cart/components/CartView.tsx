@@ -51,14 +51,14 @@ export default function CartView() {
     }
   }
 
-  async function handleCommitQuantity(itemId: string, currentQuantity: number) {
-    const newQuantity = quantities[itemId];
-    if (!newQuantity || newQuantity === currentQuantity) return;
+  async function handleQuantityChange(itemId: string, currentQuantity: number, targetQuantity: number) {
+    setQuantities((prev) => ({ ...prev, [itemId]: targetQuantity }));
+    if (targetQuantity === currentQuantity || targetQuantity < 1) return;
 
     setPendingItemId(itemId);
     setError(null);
     try {
-      const data = await updateCartItem(itemId, newQuantity);
+      const data = await updateCartItem(itemId, targetQuantity);
       setCart(data);
       setItemCount(data.items.reduce((sum, item) => sum + item.quantity, 0));
     } catch (err) {
@@ -72,6 +72,7 @@ export default function CartView() {
       setPendingItemId(null);
     }
   }
+
 
   async function handleRemove(itemId: string) {
     setPendingItemId(itemId);
@@ -92,7 +93,7 @@ export default function CartView() {
         <p className="text-[var(--brand-text-muted)]">Bạn cần đăng nhập để xem giỏ hàng.</p>
         <Link
           href="/login"
-          className="mt-4 inline-block bg-[var(--brand-olive)] text-white font-semibold px-6 py-3 rounded-full hover:opacity-90 transition-opacity"
+          className="mt-4 inline-block bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest px-6 py-3.5 hover:bg-black transition-colors"
         >
           Đăng nhập
         </Link>
@@ -110,7 +111,7 @@ export default function CartView() {
         <p className="text-[var(--brand-text-muted)]">Giỏ hàng của bạn đang trống.</p>
         <Link
           href="/"
-          className="mt-4 inline-block bg-[var(--brand-olive)] text-white font-semibold px-6 py-3 rounded-full hover:opacity-90 transition-opacity"
+          className="mt-4 inline-block bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest px-6 py-3.5 hover:bg-black transition-colors"
         >
           Tiếp tục mua sắm
         </Link>
@@ -121,60 +122,88 @@ export default function CartView() {
   const hasUnavailableItems = cart.items.some((item) => !item.isAvailable);
 
   return (
-    <main className="max-w-2xl mx-auto px-6 py-10">
-      <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)] mb-8">
+    <main className="px-6 md:px-12 py-12 max-w-3xl">
+      <h1 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight text-[var(--brand-text)] mb-10">
         Giỏ hàng
       </h1>
 
       {error && (
-        <p className="mb-6 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+        <p className="mb-6 text-sm text-red-600 bg-red-50 border border-red-200 p-3">
           {error}
         </p>
       )}
 
-      <div className="space-y-4">
+      <div className="divide-y divide-[var(--brand-border)]">
         {cart.items.map((item) => (
           <div
             key={item.itemId}
-            className={`flex items-center justify-between gap-4 rounded-2xl border p-4 ${
-              !item.isAvailable
-                ? "border-red-300 bg-red-50"
-                : "border-[var(--brand-border)] bg-white"
-            }`}
+            className={`flex items-center gap-4 py-5 ${!item.isAvailable ? "opacity-60" : ""}`}
           >
-            <div className="flex-1">
-              <p className="font-heading font-semibold text-[var(--brand-text)]">
+            <div className="w-20 h-20 bg-[var(--brand-cream-dark)] overflow-hidden shrink-0">
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.imageUrl}
+                  alt={item.productName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[var(--brand-text-muted)] text-[10px]">
+                  Chưa có ảnh
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="font-heading font-semibold text-[var(--brand-text)] truncate">
                 {item.productName}
               </p>
               <p className="text-sm text-[var(--brand-text-muted)]">
                 {[item.size, item.color].filter(Boolean).join(" - ")}
               </p>
-              <p className="text-sm font-bold text-[var(--brand-olive)] mt-1">
+              <p className="text-sm font-bold text-[var(--brand-text)] mt-1">
                 {formatCurrency(item.unitPrice)}
               </p>
               {item.warning && <p className="text-sm text-red-600 mt-1">{item.warning}</p>}
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min={1}
-                max={item.availableQuantity}
-                value={quantities[item.itemId] ?? item.quantity}
-                disabled={pendingItemId === item.itemId}
-                onChange={(e) =>
-                  setQuantities((prev) => ({
-                    ...prev,
-                    [item.itemId]: Math.max(1, Number(e.target.value)),
-                  }))
-                }
-                onBlur={() => handleCommitQuantity(item.itemId, item.quantity)}
-                className="w-16 border border-[var(--brand-border)] rounded-xl px-2 py-2 text-center"
-              />
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              {/* Nút +/- thân thiện hơn ô nhập số thô — vẫn commit lúc rời khỏi ô nếu gõ tay */}
+              <div className="flex items-center gap-1 border border-[var(--brand-border)] px-1 py-1">
+                <button
+                  onClick={() =>
+                    handleQuantityChange(
+                      item.itemId,
+                      item.quantity,
+                      Math.max(1, (quantities[item.itemId] ?? item.quantity) - 1)
+                    )
+                  }
+                  disabled={pendingItemId === item.itemId}
+                  className="w-7 h-7 flex items-center justify-center text-[var(--brand-text)] hover:bg-[var(--brand-cream-dark)] transition-colors disabled:opacity-50"
+                >
+                  −
+                </button>
+                <span className="w-8 text-center text-sm font-semibold text-[var(--brand-text)]">
+                  {quantities[item.itemId] ?? item.quantity}
+                </span>
+                <button
+                  onClick={() =>
+                    handleQuantityChange(
+                      item.itemId,
+                      item.quantity,
+                      Math.min(item.availableQuantity, (quantities[item.itemId] ?? item.quantity) + 1)
+                    )
+                  }
+                  disabled={pendingItemId === item.itemId}
+                  className="w-7 h-7 flex items-center justify-center text-[var(--brand-text)] hover:bg-[var(--brand-cream-dark)] transition-colors disabled:opacity-50"
+                >
+                  +
+                </button>
+              </div>
               <button
                 onClick={() => handleRemove(item.itemId)}
                 disabled={pendingItemId === item.itemId}
-                className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                className="text-xs text-red-600 hover:underline disabled:opacity-50"
               >
                 Xóa
               </button>
@@ -183,9 +212,9 @@ export default function CartView() {
         ))}
       </div>
 
-      <div className="mt-8 border-t border-[var(--brand-border)] pt-6 flex items-center justify-between">
-        <p className="font-heading text-lg font-bold text-[var(--brand-text)]">Tạm tính</p>
-        <p className="font-heading text-lg font-extrabold text-[var(--brand-olive)]">
+      <div className="mt-8 pt-8 border-t border-[var(--brand-border)] flex items-center justify-between">
+        <p className="text-[var(--brand-text-muted)]">Tạm tính</p>
+        <p className="font-heading text-3xl font-extrabold text-[var(--brand-text)]">
           {formatCurrency(cart.subTotal)}
         </p>
       </div>
@@ -197,7 +226,7 @@ export default function CartView() {
       ) : (
         <Link
           href="/checkout"
-          className="mt-6 block text-center bg-[var(--brand-olive)] text-white font-semibold py-3 rounded-full hover:opacity-90 transition-opacity"
+          className="mt-6 block text-center bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest py-3.5 hover:bg-black transition-colors"
         >
           Tiến hành đặt hàng
         </Link>

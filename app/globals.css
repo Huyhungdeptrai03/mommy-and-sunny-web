@@ -2,54 +2,60 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #141414;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-nunito), var(--font-geist-sans), sans-serif;
+  font-family: var(--font-body-sans), var(--font-geist-sans), sans-serif;
 }
 
 :root {
-  /* Bảng màu lấy từ thiết kế tham khảo — tông ấm, pastel, phù hợp ngành mẹ & bé */
-  --brand-cream: #faf6f0;
-  --brand-cream-dark: #f2ebe0;
-  --brand-pink: #f6d9de;
-  --brand-pink-dark: #efc2cb;
-  --brand-yellow: #f5e6b8;
-  --brand-blue: #d8e6f0;
-  --brand-green: #dce8d0;
-  --brand-olive: #5b5a42;
-  --brand-olive-dark: #45442f;
-  --brand-text: #3a362f;
-  --brand-text-muted: #7a756a;
-  --brand-border: #e8e1d4;
+  /* Theo bảng màu logo Crab Bébé — đỏ đậm sang trọng trên nền trắng, góc vuông.
+     Giữ nguyên TÊN biến cũ (brand-olive, brand-pink...) để toàn bộ trang (kể cả khu
+     Admin) tự động ăn theo bảng màu mới mà không phải sửa từng file. */
+  --brand-cream: #fffcfc;
+  --brand-cream-dark: #f6eeee;
+  --brand-pink: #f6e2e2;
+  --brand-pink-dark: #edc9c9;
+  --brand-yellow: #f2efe7;
+  --brand-blue: #eceeec;
+  --brand-green: #eceee8;
+  --brand-olive: #af1830;
+  --brand-olive-dark: #7c0f22;
+  --brand-text: #1a1414;
+  --brand-text-muted: #7a6c6c;
+  --brand-border: #ecdede;
+
+  /* Một điểm nhấn màu duy nhất — vàng đồng ấm, dùng RẤT tiết chế cho sale/rating/wishlist */
+  --brand-accent: #b0724f;
 }
- 
-/* Font riêng cho heading — dùng biến font Nunito khai báo ở layout.tsx */
+
+/* Font riêng cho heading — Montserrat, uppercase, đúng tinh thần biên tập cao cấp */
 .font-heading {
-  font-family: var(--font-nunito), sans-serif;
+  font-family: var(--font-heading-sans), sans-serif;
 }
- 
+
 /* Cắt text theo số dòng cho tên sản phẩm dài */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

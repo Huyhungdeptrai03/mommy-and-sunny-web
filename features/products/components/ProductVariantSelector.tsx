@@ -71,11 +71,11 @@ export default function ProductVariantSelector({ variants }: ProductVariantSelec
               type="button"
               disabled={isOutOfStock}
               onClick={() => setSelectedVariantId(variant.id)}
-              className={`w-full flex items-center justify-between border-2 rounded-2xl p-4 text-left transition-colors ${
+              className={`w-full flex items-center justify-between border-2 p-4 text-left transition-colors ${
                 isSelected
-                  ? "border-[var(--brand-olive)] bg-[var(--brand-pink)]/30"
+                  ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
                   : "border-[var(--brand-border)]"
-              } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover:border-[var(--brand-olive)]"}`}
+              } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover:border-[var(--brand-text)]"}`}
             >
               <div>
                 <p className="font-medium text-[var(--brand-text)]">
@@ -85,7 +85,7 @@ export default function ProductVariantSelector({ variants }: ProductVariantSelec
                   {isOutOfStock ? "Hết hàng" : `Còn ${variant.availableQuantity} sản phẩm`}
                 </p>
               </div>
-              <p className="font-bold text-[var(--brand-olive)]">
+              <p className="font-bold text-[var(--brand-text)]">
                 {formatCurrency(variant.price)}
               </p>
             </button>
@@ -102,14 +102,14 @@ export default function ProductVariantSelector({ variants }: ProductVariantSelec
             max={selectedVariant.availableQuantity}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-            className="w-20 border border-[var(--brand-border)] rounded-xl px-3 py-2"
+            className="w-20 border border-[var(--brand-border)] px-3 py-2 focus:outline-none focus:border-[var(--brand-text)]"
           />
         </div>
       )}
 
       {message && (
         <p
-          className={`mt-4 text-sm rounded-xl p-3 border ${
+          className={`mt-4 text-sm p-3 border ${
             message.type === "success"
               ? "text-green-700 bg-green-50 border-green-200"
               : "text-red-600 bg-red-50 border-red-200"
@@ -123,7 +123,7 @@ export default function ProductVariantSelector({ variants }: ProductVariantSelec
         type="button"
         onClick={handleAddToCart}
         disabled={isSubmitting || allOutOfStock}
-        className="mt-5 w-full bg-[var(--brand-olive)] text-white rounded-full py-3 font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+        className="mt-5 w-full bg-[var(--brand-olive)] text-white py-3.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50"
       >
         {isSubmitting ? "Đang thêm..." : allOutOfStock ? "Hết hàng" : "Thêm vào giỏ"}
       </button>

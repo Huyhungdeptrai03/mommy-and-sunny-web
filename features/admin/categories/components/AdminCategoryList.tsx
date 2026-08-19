@@ -53,7 +53,7 @@ export default function AdminCategoryList() {
   const [editData, setEditData] = useState({ name: "", parentCategoryId: "", imageUrl: "" });
 
   const inputClass =
-    "border border-[var(--brand-border)] rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
+    "border border-[var(--brand-border)] px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
 
   useEffect(() => {
     void load();
@@ -139,18 +139,18 @@ export default function AdminCategoryList() {
 
   return (
     <main className="p-8 max-w-4xl">
-      <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)] mb-6">
+      <h1 className="font-heading text-3xl font-extrabold text-[var(--brand-text)] mb-6">
         Quản lý danh mục
       </h1>
 
       {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3">
           {error}
         </p>
       )}
 
       {/* Form tạo mới */}
-      <section className="mb-8 border border-[var(--brand-border)] bg-white rounded-2xl p-6">
+      <section className="mb-8 bg-[var(--brand-cream-dark)] p-6">
         <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-4">
           Thêm danh mục mới
         </h2>
@@ -183,14 +183,14 @@ export default function AdminCategoryList() {
         <button
           onClick={handleCreate}
           disabled={isCreating}
-          className="mt-4 bg-[var(--brand-olive)] text-white rounded-full px-6 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="mt-4 bg-[var(--brand-olive)] text-white px-6 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {isCreating ? "Đang tạo..." : "Thêm danh mục"}
         </button>
       </section>
 
       {/* Bảng danh sách */}
-      <div className="rounded-2xl border border-[var(--brand-border)] bg-white overflow-hidden">
+      <div className=" border border-[var(--brand-border)] bg-white overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-[var(--brand-cream-dark)] text-left">
             <tr>

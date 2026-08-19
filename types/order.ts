@@ -19,6 +19,7 @@ export interface OrderItem {
   unitPrice: number;
   quantity: number;
   subtotal: number;
+  purchaseBatchName: string | null;
 }
 
 export interface OrderStatusHistoryItem {
@@ -40,6 +41,9 @@ export interface OrderDetail {
   shippingFee: number;
   discountAmount: number;
   totalAmount: number;
+  depositAmount: number | null;
+  depositPaymentStatus: string;
+  couponCode: string | null;
   customerNote: string | null;
   createdAt: string;
   items: OrderItem[];

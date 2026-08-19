@@ -17,6 +17,13 @@ export interface ProductImageAdmin {
   displayOrder: number;
 }
 
+export interface ProductSpecificationAdmin {
+  id: string;
+  label: string;
+  value: string;
+  displayOrder: number;
+}
+
 export interface ProductVariantAdmin {
   id: string;
   sku: string;
@@ -37,9 +44,12 @@ export interface AdminProductDetail {
   slug: string;
   description: string | null;
   brand: string | null;
-  ageRangeMinMonths: number;
-  ageRangeMaxMonths: number;
+  ageRangeMinMonths: number | null;
+  ageRangeMaxMonths: number | null;
   status: string;
+  purchaseBatchId: string | null;
+  purchaseBatchName: string | null;
   images: ProductImageAdmin[];
+  specifications: ProductSpecificationAdmin[];
   variants: ProductVariantAdmin[];
 }

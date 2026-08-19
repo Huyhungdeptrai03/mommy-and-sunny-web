@@ -20,3 +20,22 @@ export async function updateOrderStatus(
 ): Promise<void> {
   await apiClient.patch(`/admin/orders/${id}/status`, { toStatus, note });
 }
+
+export async function setOrderDeposit(id: string, depositAmount: number): Promise<AdminOrderDetail> {
+  const res = await apiClient.put<ApiResponse<AdminOrderDetail>>(`/admin/orders/${id}/deposit`, {
+    depositAmount,
+  });
+  return res.data.data;
+}
+
+export async function markDepositPaid(id: string): Promise<AdminOrderDetail> {
+  const res = await apiClient.post<ApiResponse<AdminOrderDetail>>(
+    `/admin/orders/${id}/deposit/mark-paid`
+  );
+  return res.data.data;
+}
+
+export async function markFinalPaymentPaid(id: string): Promise<AdminOrderDetail> {
+  const res = await apiClient.post<ApiResponse<AdminOrderDetail>>(`/admin/orders/${id}/mark-paid`);
+  return res.data.data;
+}

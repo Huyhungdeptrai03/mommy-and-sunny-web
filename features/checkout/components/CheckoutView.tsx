@@ -7,7 +7,9 @@ import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { getCart } from "@/features/cart/api";
 import { getMyAddresses, createAddress } from "@/features/account/api";
+import AddressSelector from "./AddressSelector";
 import { createOrder } from "@/features/orders/api";
+import { applyCoupon } from "@/features/checkout/couponApi";
 import { formatCurrency } from "@/lib/utils";
 import { Cart } from "@/types/cart";
 import { Address } from "@/types/address";
@@ -24,6 +26,15 @@ export default function CheckoutView() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
   const [customerNote, setCustomerNote] = useState("");
+
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(
+    null
+  );
+  const [couponMessage, setCouponMessage] = useState<{ text: string; isError: boolean } | null>(
+    null
+  );
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,6 +113,7 @@ export default function CheckoutView() {
       const result = await createOrder({
         addressId: selectedAddressId,
         paymentMethod,
+        couponCode: appliedCoupon?.code,
         customerNote: customerNote || undefined,
       });
       setItemCount(0);
@@ -125,8 +137,43 @@ export default function CheckoutView() {
     }
   }
 
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+
+    setIsApplyingCoupon(true);
+    setCouponMessage(null);
+    try {
+      const result = await applyCoupon(couponInput.trim());
+      if (result.isValid) {
+        setAppliedCoupon({
+          code: couponInput.trim().toUpperCase(),
+          discountAmount: result.discountAmount,
+        });
+        setCouponMessage({ text: result.message ?? "Áp dụng thành công", isError: false });
+      } else {
+        setAppliedCoupon(null);
+        setCouponMessage({ text: result.message ?? "Mã không hợp lệ", isError: true });
+      }
+    } catch (err) {
+      setAppliedCoupon(null);
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setCouponMessage({ text: err.response.data.message, isError: true });
+      } else {
+        setCouponMessage({ text: "Không thể áp dụng mã, vui lòng thử lại", isError: true });
+      }
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponMessage(null);
+  }
+
   const inputClass =
-    "w-full border border-[var(--brand-border)] rounded-xl px-4 py-2 bg-white focus:outline-none focus:border-[var(--brand-olive)]";
+    "w-full border border-[var(--brand-border)] px-4 py-2.5 bg-white focus:outline-none focus:border-[var(--brand-text)]";
 
   if (!isAuthenticated) {
     return (
@@ -142,25 +189,31 @@ export default function CheckoutView() {
 
   if (orderResult) {
     return (
-      <main className="max-w-2xl mx-auto px-6 py-20 text-center">
-        <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-olive)]">
-          Đặt hàng thành công! 🎉
+      <main className="max-w-lg mx-auto px-6 py-20 text-center">
+        <div className="w-16 h-16 border border-[var(--brand-border)] flex items-center justify-center mx-auto mb-6 text-3xl">
+          🎉
+        </div>
+        <h1 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight text-[var(--brand-text)] leading-tight">
+          Đặt hàng thành công!
         </h1>
-        <p className="mt-3 text-[var(--brand-text)]">
-          Mã đơn hàng: <span className="font-semibold">{orderResult.orderCode}</span>
+        <p className="mt-4 text-[var(--brand-text-muted)]">
+          Mã đơn hàng: <span className="font-semibold text-[var(--brand-text)]">{orderResult.orderCode}</span>
         </p>
-        <p className="text-[var(--brand-text)]">
-          Tổng tiền: <span className="font-semibold">{formatCurrency(orderResult.totalAmount)}</span>
+        <p className="text-[var(--brand-text-muted)]">
+          Tổng tiền:{" "}
+          <span className="font-semibold text-[var(--brand-text)]">
+            {formatCurrency(orderResult.totalAmount)}
+          </span>
         </p>
         {paymentMethod === "Momo" && !orderResult.paymentUrl && (
-          <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+          <p className="mt-4 text-sm text-red-600 bg-red-50 p-3">
             Đơn hàng đã được tạo, nhưng không thể kết nối tới MoMo lúc này. Vui lòng vào mục
             &ldquo;Đơn hàng&rdquo; để thử thanh toán lại, hoặc liên hệ hỗ trợ.
           </p>
         )}
         <button
           onClick={() => router.push("/")}
-          className="mt-8 bg-[var(--brand-olive)] text-white font-semibold px-8 py-3 rounded-full hover:opacity-90 transition-opacity"
+          className="mt-10 bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest px-8 py-3.5 hover:bg-black transition-colors"
         >
           Tiếp tục mua sắm
         </button>
@@ -176,14 +229,23 @@ export default function CheckoutView() {
     );
   }
 
+  const hasPreOrderItems = cart.items.some((item) => item.purchaseBatchName);
+
+  // Nếu giỏ hàng có sản phẩm đặt trước mà đang lỡ chọn Momo (VD: thêm sản phẩm đặt trước
+  // vào giỏ SAU KHI đã chọn Momo ở lần trước) — tự động ép về COD, không để khách bấm
+  // đặt hàng với lựa chọn không hợp lệ (Backend cũng chặn, đây chỉ là an toàn 2 lớp)
+  if (hasPreOrderItems && paymentMethod === "Momo") {
+    setPaymentMethod("COD");
+  }
+
   return (
-    <main className="max-w-2xl mx-auto px-6 py-10">
-      <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)] mb-8">
+    <main className="max-w-2xl mx-auto px-6 py-12">
+      <h1 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight text-[var(--brand-text)] mb-10">
         Đặt hàng
       </h1>
 
       {error && (
-        <p className="mb-6 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+        <p className="mb-6 text-sm text-red-600 bg-red-50 p-3">
           {error}
         </p>
       )}
@@ -198,9 +260,9 @@ export default function CheckoutView() {
             {addresses.map((addr) => (
               <label
                 key={addr.id}
-                className={`flex items-start gap-3 rounded-2xl border-2 p-4 cursor-pointer transition-colors ${
+                className={`flex items-start gap-3 border-2 p-4 cursor-pointer transition-colors ${
                   selectedAddressId === addr.id
-                    ? "border-[var(--brand-olive)] bg-[var(--brand-pink)]/30"
+                    ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
                     : "border-[var(--brand-border)] bg-white"
                 }`}
               >
@@ -216,7 +278,9 @@ export default function CheckoutView() {
                     {addr.recipientName} — {addr.phoneNumber}
                   </p>
                   <p className="text-sm text-[var(--brand-text-muted)]">
-                    {addr.detailAddress}, {addr.ward}, {addr.district}, {addr.province}
+                    {[addr.detailAddress, addr.ward, addr.district, addr.province]
+                      .filter(Boolean)
+                      .join(", ")}
                   </p>
                 </div>
               </label>
@@ -224,7 +288,7 @@ export default function CheckoutView() {
             <button
               type="button"
               onClick={() => setShowAddressForm(true)}
-              className="text-sm text-[var(--brand-olive)] font-medium underline"
+              className="text-sm text-[var(--brand-text)] font-medium underline"
             >
               + Thêm địa chỉ mới
             </button>
@@ -232,7 +296,7 @@ export default function CheckoutView() {
         )}
 
         {showAddressForm && (
-          <div className="space-y-3 rounded-2xl border border-[var(--brand-border)] bg-white p-5">
+          <div className="space-y-3 bg-[var(--brand-cream-dark)] p-5">
             <input
               placeholder="Họ tên người nhận"
               value={newAddress.recipientName}
@@ -245,28 +309,15 @@ export default function CheckoutView() {
               onChange={(e) => setNewAddress((p) => ({ ...p, phoneNumber: e.target.value }))}
               className={inputClass}
             />
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                placeholder="Tỉnh/Thành"
-                value={newAddress.province}
-                onChange={(e) => setNewAddress((p) => ({ ...p, province: e.target.value }))}
-                className={inputClass}
-              />
-              <input
-                placeholder="Quận/Huyện"
-                value={newAddress.district}
-                onChange={(e) => setNewAddress((p) => ({ ...p, district: e.target.value }))}
-                className={inputClass}
-              />
-              <input
-                placeholder="Phường/Xã"
-                value={newAddress.ward}
-                onChange={(e) => setNewAddress((p) => ({ ...p, ward: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
+            <AddressSelector
+              province={newAddress.province}
+              ward={newAddress.ward}
+              onProvinceChange={(name) => setNewAddress((p) => ({ ...p, province: name }))}
+              onWardChange={(name) => setNewAddress((p) => ({ ...p, ward: name }))}
+              inputClass={inputClass}
+            />
             <input
-              placeholder="Số nhà, tên đường"
+              placeholder="Số nhà, tên đường, thôn/xóm (VD: 12 Nguyễn Trãi)"
               value={newAddress.detailAddress}
               onChange={(e) => setNewAddress((p) => ({ ...p, detailAddress: e.target.value }))}
               className={inputClass}
@@ -275,7 +326,7 @@ export default function CheckoutView() {
               <button
                 type="button"
                 onClick={handleCreateAddress}
-                className="bg-[var(--brand-olive)] text-white rounded-full px-5 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="bg-[var(--brand-olive)] text-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors"
               >
                 Lưu địa chỉ
               </button>
@@ -297,27 +348,37 @@ export default function CheckoutView() {
         <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-3">
           Phương thức thanh toán
         </h2>
+
+        {hasPreOrderItems && (
+          <p className="text-sm text-[var(--brand-text-muted)] bg-[var(--brand-cream-dark)] p-3 mb-3">
+            Đơn hàng có sản phẩm đặt trước (hàng xách tay) — chỉ hỗ trợ thanh toán COD.
+            Tiền cọc và thanh toán còn lại sẽ được shop liên hệ hướng dẫn riêng.
+          </p>
+        )}
+
         <div className="space-y-3">
-          {(["COD", "Momo"] as PaymentMethod[]).map((method) => (
-            <label
-              key={method}
-              className={`flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer transition-colors ${
-                paymentMethod === method
-                  ? "border-[var(--brand-olive)] bg-[var(--brand-pink)]/30"
-                  : "border-[var(--brand-border)] bg-white"
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                checked={paymentMethod === method}
-                onChange={() => setPaymentMethod(method)}
-              />
-              <span className="text-[var(--brand-text)]">
-                {method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví Momo"}
-              </span>
-            </label>
-          ))}
+          {(["COD", "Momo"] as PaymentMethod[])
+            .filter((method) => method === "COD" || !hasPreOrderItems)
+            .map((method) => (
+              <label
+                key={method}
+                className={`flex items-center gap-3 border-2 p-4 cursor-pointer transition-colors ${
+                  paymentMethod === method
+                    ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
+                    : "border-[var(--brand-border)] bg-white"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  checked={paymentMethod === method}
+                  onChange={() => setPaymentMethod(method)}
+                />
+                <span className="text-[var(--brand-text)]">
+                  {method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví Momo"}
+                </span>
+              </label>
+            ))}
         </div>
       </section>
 
@@ -333,13 +394,66 @@ export default function CheckoutView() {
         />
       </section>
 
-      <section className="mb-8 border-t border-[var(--brand-border)] pt-6">
-        <div className="flex items-center justify-between">
-          <span className="font-heading text-lg font-bold text-[var(--brand-text)]">
-            Tổng cộng
-          </span>
-          <span className="font-heading text-lg font-extrabold text-[var(--brand-olive)]">
-            {formatCurrency(cart.subTotal)}
+      <section className="mb-8">
+        <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-3">
+          Mã giảm giá
+        </h2>
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between border border-[var(--brand-border)] px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-[var(--brand-text)]">
+                {appliedCoupon.code}
+              </p>
+              <p className="text-xs text-[var(--brand-text-muted)]">
+                Giảm {formatCurrency(appliedCoupon.discountAmount)}
+              </p>
+            </div>
+            <button
+              onClick={handleRemoveCoupon}
+              className="text-xs text-red-600 hover:underline"
+            >
+              Gỡ mã
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              placeholder="Nhập mã giảm giá"
+              value={couponInput}
+              onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+              className={inputClass}
+            />
+            <button
+              onClick={handleApplyCoupon}
+              disabled={isApplyingCoupon}
+              className="bg-[var(--brand-olive)] text-white px-5 py-2 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {isApplyingCoupon ? "Đang kiểm tra..." : "Áp dụng"}
+            </button>
+          </div>
+        )}
+        {couponMessage && (
+          <p className={`text-sm mt-2 ${couponMessage.isError ? "text-red-600" : "text-[var(--brand-text)]"}`}>
+            {couponMessage.text}
+          </p>
+        )}
+      </section>
+
+      <section className="mb-8 pt-6">
+        <div className="flex items-center justify-between text-sm text-[var(--brand-text-muted)] mb-1">
+          <span>Tạm tính</span>
+          <span>{formatCurrency(cart.subTotal)}</span>
+        </div>
+        {appliedCoupon && appliedCoupon.discountAmount > 0 && (
+          <div className="flex items-center justify-between text-sm text-red-600 mb-1">
+            <span>Giảm giá ({appliedCoupon.code})</span>
+            <span>-{formatCurrency(appliedCoupon.discountAmount)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-[var(--brand-text-muted)]">Tổng cộng</span>
+          <span className="font-heading text-3xl font-extrabold text-[var(--brand-text)]">
+            {formatCurrency(Math.max(0, cart.subTotal - (appliedCoupon?.discountAmount ?? 0)))}
           </span>
         </div>
       </section>
@@ -347,7 +461,7 @@ export default function CheckoutView() {
       <button
         onClick={handleSubmitOrder}
         disabled={isSubmitting}
-        className="w-full bg-[var(--brand-olive)] text-white font-semibold py-3 rounded-full hover:opacity-90 transition-opacity disabled:opacity-50"
+        className="w-full bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest py-3.5 hover:bg-black transition-colors disabled:opacity-50"
       >
         {isSubmitting ? "Đang xử lý..." : "Xác nhận đặt hàng"}
       </button>

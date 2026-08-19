@@ -71,7 +71,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
 
   return (
     <section className="mt-16">
-      <h2 className="font-heading text-lg font-bold text-[var(--brand-text)] mb-6">
+      <h2 className="font-heading text-lg font-bold uppercase tracking-tight text-[var(--brand-text)] mb-6">
         Đánh giá từ khách hàng
       </h2>
 
@@ -81,7 +81,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
             <p className="font-heading text-4xl font-extrabold text-[var(--brand-text)]">
               {data.summary.averageRating.toFixed(1)}
             </p>
-            <div className="flex justify-center md:justify-start text-[var(--brand-olive)] mt-1">
+            <div className="flex justify-center md:justify-start text-[var(--brand-accent)] mt-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
@@ -106,9 +106,9 @@ export default function ProductReviews({ productId }: { productId: string }) {
                   className="flex items-center gap-2 text-xs text-[var(--brand-text-muted)]"
                 >
                   <span className="w-10">{star} sao</span>
-                  <div className="flex-1 h-2 bg-[var(--brand-cream-dark)] rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-[var(--brand-cream-dark)] overflow-hidden">
                     <div
-                      className="h-full bg-[var(--brand-olive)]"
+                      className="h-full bg-[var(--brand-text)]"
                       style={{ width: `${percent}%` }}
                     />
                   </div>
@@ -125,7 +125,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
       )}
 
       {canReview && (
-        <div className="mb-8 border border-[var(--brand-border)] rounded-2xl p-5 bg-white">
+        <div className="mb-8 border border-[var(--brand-border)] p-5 bg-white">
           <p className="font-heading font-semibold text-[var(--brand-text)] mb-3">
             Viết đánh giá của bạn
           </p>
@@ -134,7 +134,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
               <button key={i} type="button" onClick={() => setRating(i + 1)}>
                 <Star
                   size={22}
-                  className="text-[var(--brand-olive)]"
+                  className="text-[var(--brand-accent)]"
                   fill={i < rating ? "currentColor" : "none"}
                 />
               </button>
@@ -145,13 +145,13 @@ export default function ProductReviews({ productId }: { productId: string }) {
             onChange={(e) => setComment(e.target.value)}
             placeholder="Chia sẻ cảm nhận của bạn về sản phẩm (không bắt buộc)"
             rows={3}
-            className="w-full border border-[var(--brand-border)] rounded-xl px-4 py-2 text-sm mb-3 focus:outline-none focus:border-[var(--brand-olive)]"
+            className="w-full border border-[var(--brand-border)] px-4 py-2 text-sm mb-3 focus:outline-none focus:border-[var(--brand-text)]"
           />
           {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-[var(--brand-olive)] text-white rounded-full px-6 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="bg-[var(--brand-olive)] text-white px-6 py-2.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50"
           >
             {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
           </button>
@@ -167,7 +167,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
                 {new Date(review.createdAt).toLocaleDateString("vi-VN")}
               </p>
             </div>
-            <div className="flex text-[var(--brand-olive)] mt-1">
+            <div className="flex text-[var(--brand-accent)] mt-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} size={13} fill={i < review.rating ? "currentColor" : "none"} />
               ))}

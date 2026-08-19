@@ -30,12 +30,12 @@ export default function AdminOrderList() {
   }
 
   const selectClass =
-    "border border-[var(--brand-border)] rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
+    "border border-[var(--brand-border)] px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
 
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)]">
+        <h1 className="font-heading text-3xl font-extrabold text-[var(--brand-text)]">
           Quản lý đơn hàng
         </h1>
         <select
@@ -57,7 +57,7 @@ export default function AdminOrderList() {
       {isLoading ? (
         <p className="text-[var(--brand-text-muted)]">Đang tải...</p>
       ) : (
-        <div className="rounded-2xl border border-[var(--brand-border)] bg-white overflow-hidden">
+        <div className=" border border-[var(--brand-border)] bg-white overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-[var(--brand-cream-dark)] text-left">
               <tr>
@@ -93,7 +93,7 @@ export default function AdminOrderList() {
                     </td>
                     <td className="p-3">
                       <span
-                        className={`text-xs font-semibold px-3 py-1 rounded-full ${getOrderStatusColor(
+                        className={`text-xs font-semibold px-3 py-1 ${getOrderStatusColor(
                           o.status
                         )}`}
                       >

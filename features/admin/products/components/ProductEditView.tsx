@@ -9,13 +9,17 @@ import {
   updateProductStatus,
   addProductImage,
   deleteProductImage,
+  addProductSpecification,
+  deleteProductSpecification,
   addProductVariant,
   updateProductVariant,
   deleteProductVariant,
 } from "@/features/admin/products/api";
 import { getCategoryTree } from "@/features/categories/api";
+import { getAdminPurchaseBatches } from "@/features/admin/purchase-batches/api";
 import { formatCurrency } from "@/lib/utils";
 import { AdminProductDetail } from "@/types/adminProduct";
+import { AdminPurchaseBatch } from "@/types/adminPurchaseBatch";
 import { Category } from "@/types/category";
 
 function flattenCategories(categories: Category[], prefix = ""): { id: string; label: string }[] {
@@ -50,13 +54,19 @@ export default function ProductEditView() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [brand, setBrand] = useState("");
-  const [ageMin, setAgeMin] = useState(0);
-  const [ageMax, setAgeMax] = useState(12);
+  const [ageMin, setAgeMin] = useState("");
+  const [ageMax, setAgeMax] = useState("");
+  const [purchaseBatches, setPurchaseBatches] = useState<AdminPurchaseBatch[]>([]);
+  const [purchaseBatchId, setPurchaseBatchId] = useState("");
   const [isSavingInfo, setIsSavingInfo] = useState(false);
 
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageIsPrimary, setNewImageIsPrimary] = useState(false);
   const [isAddingImage, setIsAddingImage] = useState(false);
+
+  const [newSpecLabel, setNewSpecLabel] = useState("");
+  const [newSpecValue, setNewSpecValue] = useState("");
+  const [isAddingSpec, setIsAddingSpec] = useState(false);
 
   const [newVariant, setNewVariant] = useState({
     sku: "",
@@ -83,9 +93,9 @@ export default function ProductEditView() {
   const [isChangingStatus, setIsChangingStatus] = useState(false);
 
   const inputClass =
-    "w-full border border-[var(--brand-border)] rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-[var(--brand-olive)]";
+    "w-full border border-[var(--brand-border)] px-3 py-2 bg-white focus:outline-none focus:border-[var(--brand-olive)]";
   const smallInputClass =
-    "border border-[var(--brand-border)] rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
+    "border border-[var(--brand-border)] px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
 
   useEffect(() => {
     void loadAll();
@@ -96,18 +106,21 @@ export default function ProductEditView() {
     setIsLoading(true);
     setError(null);
     try {
-      const [productData, categoryData] = await Promise.all([
+      const [productData, categoryData, batchData] = await Promise.all([
         getAdminProductById(params.id),
         getCategoryTree(),
+        getAdminPurchaseBatches().catch(() => []),
       ]);
       setProduct(productData);
       setCategories(categoryData);
+      setPurchaseBatches(batchData);
       setCategoryId(productData.categoryId);
       setName(productData.name);
       setDescription(productData.description ?? "");
       setBrand(productData.brand ?? "");
-      setAgeMin(productData.ageRangeMinMonths);
-      setAgeMax(productData.ageRangeMaxMonths);
+      setAgeMin(productData.ageRangeMinMonths?.toString() ?? "");
+      setAgeMax(productData.ageRangeMaxMonths?.toString() ?? "");
+      setPurchaseBatchId(productData.purchaseBatchId ?? "");
     } catch {
       setError("Không thể tải thông tin sản phẩm");
     } finally {
@@ -125,8 +138,9 @@ export default function ProductEditView() {
         name,
         description: description || undefined,
         brand: brand || undefined,
-        ageRangeMinMonths: ageMin,
-        ageRangeMaxMonths: ageMax,
+        ageRangeMinMonths: ageMin ? Number(ageMin) : undefined,
+        ageRangeMaxMonths: ageMax ? Number(ageMax) : undefined,
+        purchaseBatchId: purchaseBatchId || null,
       });
       setProduct(updated);
     } catch (err) {
@@ -179,6 +193,36 @@ export default function ProductEditView() {
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err, "Không thể xóa ảnh"));
+    }
+  }
+
+  async function handleAddSpecification() {
+    if (!newSpecLabel.trim() || !newSpecValue.trim()) return;
+    setIsAddingSpec(true);
+    setError(null);
+    try {
+      await addProductSpecification(params.id, {
+        label: newSpecLabel.trim(),
+        value: newSpecValue.trim(),
+        displayOrder: product?.specifications.length ?? 0,
+      });
+      setNewSpecLabel("");
+      setNewSpecValue("");
+      await loadAll();
+    } catch (err) {
+      setError(extractErrorMessage(err, "Không thể thêm thông số"));
+    } finally {
+      setIsAddingSpec(false);
+    }
+  }
+
+  async function handleDeleteSpecification(specificationId: string) {
+    setError(null);
+    try {
+      await deleteProductSpecification(params.id, specificationId);
+      await loadAll();
+    } catch (err) {
+      setError(extractErrorMessage(err, "Không thể xóa thông số"));
     }
   }
 
@@ -275,7 +319,7 @@ export default function ProductEditView() {
   }
 
   return (
-    <main className="p-8 max-w-3xl">
+    <main className="p-8 max-w-6xl">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)]">
           Sửa sản phẩm
@@ -283,7 +327,7 @@ export default function ProductEditView() {
         <button
           onClick={handleToggleStatus}
           disabled={isChangingStatus}
-          className={`text-sm font-semibold px-5 py-2 rounded-full transition-opacity disabled:opacity-50 ${
+          className={`text-sm font-semibold px-5 py-2 transition-opacity disabled:opacity-50 ${
             product.status === "Published"
               ? "border-2 border-red-300 text-red-600 hover:bg-red-50"
               : "bg-[var(--brand-olive)] text-white hover:opacity-90"
@@ -302,13 +346,13 @@ export default function ProductEditView() {
       </p>
 
       {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3">
           {error}
         </p>
       )}
 
       {/* ===== Thông tin cơ bản ===== */}
-      <section className="mb-8 border border-[var(--brand-border)] bg-white rounded-2xl p-6">
+      <section className="mb-8 border border-[var(--brand-border)] bg-white p-6">
         <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-4">
           Thông tin cơ bản
         </h2>
@@ -353,29 +397,54 @@ export default function ProductEditView() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[var(--brand-text)] mb-1">
-                Độ tuổi từ (tháng)
+                Độ tuổi từ (tháng) — không bắt buộc
               </label>
               <input
                 type="number"
                 min={0}
                 value={ageMin}
-                onChange={(e) => setAgeMin(Number(e.target.value))}
+                onChange={(e) => setAgeMin(e.target.value)}
                 className={inputClass}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-[var(--brand-text)] mb-1">
-                Đến (tháng)
+                Đến (tháng) — không bắt buộc
               </label>
               <input
                 type="number"
                 min={0}
                 value={ageMax}
-                onChange={(e) => setAgeMax(Number(e.target.value))}
+                onChange={(e) => setAgeMax(e.target.value)}
                 className={inputClass}
               />
             </div>
           </div>
+
+          {purchaseBatches.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-[var(--brand-text)] mb-1">
+                Thuộc đợt hàng đặt trước — không bắt buộc
+              </label>
+              <select
+                value={purchaseBatchId}
+                onChange={(e) => setPurchaseBatchId(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">— Hàng có sẵn, bán ngay —</option>
+                {purchaseBatches
+                  .filter((b) => b.status === "Open" || b.id === purchaseBatchId)
+                  .map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                      {b.countryOfOrigin ? ` (${b.countryOfOrigin})` : ""}
+                      {b.status !== "Open" ? " — đã đóng, không đổi được" : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-[var(--brand-text)] mb-1">
               Mô tả
@@ -390,7 +459,7 @@ export default function ProductEditView() {
           <button
             type="submit"
             disabled={isSavingInfo}
-            className="bg-[var(--brand-olive)] text-white rounded-full px-6 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="bg-[var(--brand-olive)] text-white px-6 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {isSavingInfo ? "Đang lưu..." : "Lưu thông tin"}
           </button>
@@ -398,7 +467,7 @@ export default function ProductEditView() {
       </section>
 
       {/* ===== Ảnh sản phẩm ===== */}
-      <section className="mb-8 border border-[var(--brand-border)] bg-white rounded-2xl p-6">
+      <section className="mb-8 border border-[var(--brand-border)] bg-white p-6">
         <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-4">
           Ảnh sản phẩm
         </h2>
@@ -410,19 +479,19 @@ export default function ProductEditView() {
           {product.images.map((img) => (
             <div
               key={img.id}
-              className="flex items-center gap-3 border border-[var(--brand-border)] rounded-xl p-2"
+              className="flex items-center gap-3 border border-[var(--brand-border)] p-2"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.imageUrl}
                 alt=""
-                className="w-16 h-16 object-cover rounded-lg border border-[var(--brand-border)]"
+                className="w-16 h-16 object-cover border border-[var(--brand-border)]"
               />
               <div className="flex-1 text-sm text-[var(--brand-text-muted)] truncate">
                 {img.imageUrl}
               </div>
               {img.isPrimary && (
-                <span className="text-xs bg-[var(--brand-blue)] text-[var(--brand-olive-dark)] px-3 py-1 rounded-full">
+                <span className="text-xs bg-[var(--brand-blue)] text-[var(--brand-olive-dark)] px-3 py-1">
                   Ảnh chính
                 </span>
               )}
@@ -454,7 +523,61 @@ export default function ProductEditView() {
           <button
             onClick={handleAddImage}
             disabled={isAddingImage}
-            className="bg-[var(--brand-olive)] text-white rounded-full px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="bg-[var(--brand-olive)] text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            Thêm
+          </button>
+        </div>
+      </section>
+
+      {/* ===== Thông số sản phẩm (xuất xứ, chất liệu...) ===== */}
+      <section className="mb-8 border border-[var(--brand-border)] bg-white p-6">
+        <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-4">
+          Thông số sản phẩm
+        </h2>
+
+        <div className="space-y-2 mb-4">
+          {product.specifications.length === 0 && (
+            <p className="text-sm text-[var(--brand-text-muted)]">
+              Chưa có thông số nào (VD: Xuất xứ, Chất liệu, Dung tích...)
+            </p>
+          )}
+          {product.specifications.map((spec) => (
+            <div
+              key={spec.id}
+              className="flex items-center gap-3 border border-[var(--brand-border)] p-2"
+            >
+              <p className="flex-1 text-sm text-[var(--brand-text)]">
+                <span className="font-medium">{spec.label}</span>
+                <span className="text-[var(--brand-text-muted)]"> — {spec.value}</span>
+              </p>
+              <button
+                onClick={() => handleDeleteSpecification(spec.id)}
+                className="text-red-600 text-sm hover:underline"
+              >
+                Xóa
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            placeholder="Nhãn (VD: Xuất xứ)"
+            value={newSpecLabel}
+            onChange={(e) => setNewSpecLabel(e.target.value)}
+            className={`w-40 ${smallInputClass}`}
+          />
+          <input
+            placeholder="Giá trị (VD: Việt Nam)"
+            value={newSpecValue}
+            onChange={(e) => setNewSpecValue(e.target.value)}
+            className={`flex-1 ${smallInputClass}`}
+          />
+          <button
+            onClick={handleAddSpecification}
+            disabled={isAddingSpec}
+            className="bg-[var(--brand-olive)] text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             Thêm
           </button>
@@ -462,7 +585,7 @@ export default function ProductEditView() {
       </section>
 
       {/* ===== Biến thể ===== */}
-      <section className="mb-8 border border-[var(--brand-border)] bg-white rounded-2xl p-6">
+      <section className="mb-8 border border-[var(--brand-border)] bg-white p-6">
         <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-4">Biến thể</h2>
 
         <div className="space-y-2 mb-4">
@@ -473,65 +596,97 @@ export default function ProductEditView() {
             editingVariantId === v.id ? (
               <div
                 key={v.id}
-                className="border border-[var(--brand-border)] rounded-xl p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-center"
+                className="border border-[var(--brand-border)] p-3 grid grid-cols-2 md:grid-cols-4 gap-3 items-start"
               >
-                <input
-                  value={editingVariantData.sku}
-                  onChange={(e) => setEditingVariantData((p) => ({ ...p, sku: e.target.value }))}
-                  placeholder="SKU"
-                  className={smallInputClass}
-                />
-                <input
-                  value={editingVariantData.size}
-                  onChange={(e) => setEditingVariantData((p) => ({ ...p, size: e.target.value }))}
-                  placeholder="Size"
-                  className={smallInputClass}
-                />
-                <input
-                  value={editingVariantData.color}
-                  onChange={(e) => setEditingVariantData((p) => ({ ...p, color: e.target.value }))}
-                  placeholder="Màu"
-                  className={smallInputClass}
-                />
-                <input
-                  type="number"
-                  value={editingVariantData.price}
-                  onChange={(e) =>
-                    setEditingVariantData((p) => ({ ...p, price: Number(e.target.value) }))
-                  }
-                  placeholder="Giá"
-                  className={smallInputClass}
-                />
-                <input
-                  type="number"
-                  value={editingVariantData.stockQuantity}
-                  onChange={(e) =>
-                    setEditingVariantData((p) => ({
-                      ...p,
-                      stockQuantity: Number(e.target.value),
-                    }))
-                  }
-                  placeholder="Tồn kho"
-                  className={smallInputClass}
-                />
-                <input
-                  type="number"
-                  value={editingVariantData.compareAtPrice}
-                  onChange={(e) =>
-                    setEditingVariantData((p) => ({ ...p, compareAtPrice: e.target.value }))
-                  }
-                  placeholder="Giá gốc (Flash Sale)"
-                  className={smallInputClass}
-                />
-                <input
-                  type="datetime-local"
-                  value={editingVariantData.saleEndsAt}
-                  onChange={(e) =>
-                    setEditingVariantData((p) => ({ ...p, saleEndsAt: e.target.value }))
-                  }
-                  className={smallInputClass}
-                />
-                <div className="col-span-full flex gap-3 justify-end">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    SKU (mã sản phẩm)
+                  </label>
+                  <input
+                    value={editingVariantData.sku}
+                    onChange={(e) => setEditingVariantData((p) => ({ ...p, sku: e.target.value }))}
+                    className={smallInputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    Phân loại 1
+                  </label>
+                  <input
+                    value={editingVariantData.size}
+                    onChange={(e) => setEditingVariantData((p) => ({ ...p, size: e.target.value }))}
+                    placeholder="VD: Size M"
+                    className={smallInputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    Phân loại 2
+                  </label>
+                  <input
+                    value={editingVariantData.color}
+                    onChange={(e) => setEditingVariantData((p) => ({ ...p, color: e.target.value }))}
+                    placeholder="VD: Màu xanh"
+                    className={smallInputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    Giá bán (đ)
+                  </label>
+                  <input
+                    type="number"
+                    value={editingVariantData.price}
+                    onChange={(e) =>
+                      setEditingVariantData((p) => ({ ...p, price: Number(e.target.value) }))
+                    }
+                    className={smallInputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    Tồn kho
+                  </label>
+                  <input
+                    type="number"
+                    value={editingVariantData.stockQuantity}
+                    onChange={(e) =>
+                      setEditingVariantData((p) => ({
+                        ...p,
+                        stockQuantity: Number(e.target.value),
+                      }))
+                    }
+                    className={smallInputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    Giá gốc (Flash Sale)
+                  </label>
+                  <input
+                    type="number"
+                    value={editingVariantData.compareAtPrice}
+                    onChange={(e) =>
+                      setEditingVariantData((p) => ({ ...p, compareAtPrice: e.target.value }))
+                    }
+                    placeholder="Không giảm giá"
+                    className={smallInputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+                    Hết giảm giá lúc
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={editingVariantData.saleEndsAt}
+                    onChange={(e) =>
+                      setEditingVariantData((p) => ({ ...p, saleEndsAt: e.target.value }))
+                    }
+                    className={smallInputClass}
+                  />
+                </div>
+                <div className="col-span-full flex gap-3 justify-end pt-1">
                   <button
                     onClick={() => handleSaveVariant(v.id)}
                     className="text-[var(--brand-olive)] text-sm font-medium hover:underline"
@@ -549,13 +704,13 @@ export default function ProductEditView() {
             ) : (
               <div
                 key={v.id}
-                className="flex items-center justify-between border border-[var(--brand-border)] rounded-xl p-3 text-sm"
+                className="flex items-center justify-between border border-[var(--brand-border)] p-3 text-sm"
               >
                 <div>
                   <p className="font-medium text-[var(--brand-text)] flex items-center gap-2">
                     {v.sku} — {[v.size, v.color].filter(Boolean).join(", ") || "Mặc định"}
                     {v.compareAtPrice && v.saleEndsAt && (
-                      <span className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5">
                         ⚡ Flash Sale đến {new Date(v.saleEndsAt).toLocaleString("vi-VN")}
                       </span>
                     )}
@@ -588,59 +743,94 @@ export default function ProductEditView() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <input
-            placeholder="SKU"
-            value={newVariant.sku}
-            onChange={(e) => setNewVariant((p) => ({ ...p, sku: e.target.value }))}
-            className={smallInputClass}
-          />
-          <input
-            placeholder="Size"
-            value={newVariant.size}
-            onChange={(e) => setNewVariant((p) => ({ ...p, size: e.target.value }))}
-            className={smallInputClass}
-          />
-          <input
-            placeholder="Màu"
-            value={newVariant.color}
-            onChange={(e) => setNewVariant((p) => ({ ...p, color: e.target.value }))}
-            className={smallInputClass}
-          />
-          <input
-            type="number"
-            placeholder="Giá"
-            value={newVariant.price}
-            onChange={(e) => setNewVariant((p) => ({ ...p, price: Number(e.target.value) }))}
-            className={smallInputClass}
-          />
-          <input
-            type="number"
-            placeholder="Tồn kho"
-            value={newVariant.stockQuantity}
-            onChange={(e) =>
-              setNewVariant((p) => ({ ...p, stockQuantity: Number(e.target.value) }))
-            }
-            className={smallInputClass}
-          />
-          <input
-            type="number"
-            placeholder="Giá gốc (Flash Sale)"
-            value={newVariant.compareAtPrice}
-            onChange={(e) => setNewVariant((p) => ({ ...p, compareAtPrice: e.target.value }))}
-            className={smallInputClass}
-          />
-          <input
-            type="datetime-local"
-            value={newVariant.saleEndsAt}
-            onChange={(e) => setNewVariant((p) => ({ ...p, saleEndsAt: e.target.value }))}
-            className={smallInputClass}
-          />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              SKU (mã sản phẩm) *
+            </label>
+            <input
+              placeholder="VD: AB12345"
+              value={newVariant.sku}
+              onChange={(e) => setNewVariant((p) => ({ ...p, sku: e.target.value }))}
+              className={smallInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              Phân loại 1 — không bắt buộc
+            </label>
+            <input
+              placeholder="VD: Size M"
+              value={newVariant.size}
+              onChange={(e) => setNewVariant((p) => ({ ...p, size: e.target.value }))}
+              className={smallInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              Phân loại 2 — không bắt buộc
+            </label>
+            <input
+              placeholder="VD: Màu xanh"
+              value={newVariant.color}
+              onChange={(e) => setNewVariant((p) => ({ ...p, color: e.target.value }))}
+              className={smallInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              Giá bán (đ) *
+            </label>
+            <input
+              type="number"
+              placeholder="VD: 150000"
+              value={newVariant.price}
+              onChange={(e) => setNewVariant((p) => ({ ...p, price: Number(e.target.value) }))}
+              className={smallInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              Tồn kho (số lượng) *
+            </label>
+            <input
+              type="number"
+              placeholder="VD: 100"
+              value={newVariant.stockQuantity}
+              onChange={(e) =>
+                setNewVariant((p) => ({ ...p, stockQuantity: Number(e.target.value) }))
+              }
+              className={smallInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              Giá gốc trước giảm — chỉ điền nếu chạy Flash Sale
+            </label>
+            <input
+              type="number"
+              placeholder="Không giảm giá"
+              value={newVariant.compareAtPrice}
+              onChange={(e) => setNewVariant((p) => ({ ...p, compareAtPrice: e.target.value }))}
+              className={smallInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--brand-text-muted)] mb-1">
+              Thời điểm hết giảm giá — đi kèm ô trên
+            </label>
+            <input
+              type="datetime-local"
+              value={newVariant.saleEndsAt}
+              onChange={(e) => setNewVariant((p) => ({ ...p, saleEndsAt: e.target.value }))}
+              className={smallInputClass}
+            />
+          </div>
         </div>
         <button
           onClick={handleAddVariant}
           disabled={isAddingVariant}
-          className="mt-3 bg-[var(--brand-olive)] text-white rounded-full px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="mt-3 bg-[var(--brand-olive)] text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           Thêm biến thể
         </button>

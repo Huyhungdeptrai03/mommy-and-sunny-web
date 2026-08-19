@@ -16,7 +16,7 @@ export default function AdminUserList() {
   const [actioningId, setActioningId] = useState<string | null>(null);
 
   const inputClass =
-    "border border-[var(--brand-border)] rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
+    "border border-[var(--brand-border)] px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--brand-olive)]";
 
   useEffect(() => {
     void load();
@@ -64,7 +64,7 @@ export default function AdminUserList() {
   return (
     <main className="p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-text)]">
+        <h1 className="font-heading text-3xl font-extrabold text-[var(--brand-text)]">
           Quản lý người dùng
         </h1>
         <form
@@ -82,7 +82,7 @@ export default function AdminUserList() {
           />
           <button
             type="submit"
-            className="bg-[var(--brand-olive)] text-white rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="bg-[var(--brand-olive)] text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
           >
             Tìm
           </button>
@@ -90,12 +90,12 @@ export default function AdminUserList() {
       </div>
 
       {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3">
           {error}
         </p>
       )}
 
-      <div className="rounded-2xl border border-[var(--brand-border)] bg-white overflow-hidden overflow-x-auto">
+      <div className=" border border-[var(--brand-border)] bg-white overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-[var(--brand-cream-dark)] text-left">
             <tr>
@@ -131,7 +131,7 @@ export default function AdminUserList() {
                     </td>
                     <td className="p-3 whitespace-nowrap">
                       <span
-                        className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                        className={`text-xs font-semibold px-3 py-1 ${
                           u.role === "Admin"
                             ? "bg-[var(--brand-olive)] text-white"
                             : "bg-[var(--brand-cream-dark)] text-[var(--brand-text)]"

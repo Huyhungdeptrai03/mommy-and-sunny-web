@@ -6,6 +6,8 @@ export interface ProductFilter {
   search?: string;
   categorySlug?: string;
   ageMonths?: number;
+  purchaseBatchId?: string;
+  pageSize?: number;
 }
 
 export async function getProducts(filter?: ProductFilter): Promise<PagedResult<ProductListItem>> {
@@ -26,5 +28,10 @@ export async function getProductBySlug(slug: string): Promise<Product> {
 
 export async function getFlashSaleProducts(): Promise<FlashSaleItem[]> {
   const res = await apiClient.get<ApiResponse<FlashSaleItem[]>>("/products/flash-sale");
+  return res.data.data;
+}
+
+export async function getBrands(): Promise<string[]> {
+  const res = await apiClient.get<ApiResponse<string[]>>("/products/brands");
   return res.data.data;
 }

@@ -1,5 +1,5 @@
-import AdminOrderList from "@/features/admin/orders/components/AdminOrderList";
+import OrderList from "@/features/orders/components/OrderList";
 
-export default function AdminOrdersPage() {
-  return <AdminOrderList />;
+export default function OrdersPage() {
+  return <OrderList />;
 }

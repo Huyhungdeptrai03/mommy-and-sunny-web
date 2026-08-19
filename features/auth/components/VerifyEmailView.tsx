@@ -41,15 +41,15 @@ export default function VerifyEmailView() {
 
         {status === "success" && (
           <>
-            <h1 className="font-heading text-2xl font-extrabold text-[var(--brand-olive)]">
-              Xác thực thành công! 🎉
+            <h1 className="font-heading text-2xl font-extrabold uppercase tracking-tight text-[var(--brand-text)]">
+              Xác thực thành công!
             </h1>
             <p className="mt-3 text-[var(--brand-text-muted)]">
               Tài khoản của bạn đã được xác thực. Giờ bạn có thể đặt hàng bình thường.
             </p>
             <Link
               href="/login"
-              className="inline-block mt-6 bg-[var(--brand-olive)] text-white font-semibold px-6 py-3 rounded-full hover:opacity-90 transition-opacity"
+              className="inline-block mt-6 bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest px-6 py-3.5 hover:bg-black transition-colors"
             >
               Đăng nhập ngay
             </Link>
@@ -58,13 +58,13 @@ export default function VerifyEmailView() {
 
         {status === "error" && (
           <>
-            <h1 className="font-heading text-2xl font-extrabold text-red-600">
+            <h1 className="font-heading text-2xl font-extrabold uppercase tracking-tight text-red-600">
               Xác thực thất bại
             </h1>
             <p className="mt-3 text-[var(--brand-text-muted)]">{error}</p>
             <Link
               href="/"
-              className="inline-block mt-6 text-[var(--brand-olive)] font-medium underline"
+              className="inline-block mt-6 text-[var(--brand-text)] font-medium underline"
             >
               Về trang chủ
             </Link>
