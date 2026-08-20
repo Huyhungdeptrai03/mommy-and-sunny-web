@@ -13,19 +13,27 @@ import {
   Ship,
   Ticket,
   Newspaper,
+  FileText,
+  MessageCircle,
+  Plane,
+  BarChart3,
   LogOut,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Tổng quan", icon: LayoutDashboard },
+  { href: "/admin/stats", label: "Thống kê", icon: BarChart3 },
   { href: "/admin/products", label: "Sản phẩm", icon: Package },
   { href: "/admin/orders", label: "Đơn hàng", icon: ShoppingBag },
   { href: "/admin/purchase-batches", label: "Đợt hàng", icon: Ship },
+  { href: "/admin/personal-import-requests", label: "Đặt hàng xách tay", icon: Plane },
   { href: "/admin/coupons", label: "Mã giảm giá", icon: Ticket },
   { href: "/admin/categories", label: "Danh mục", icon: Tags },
   { href: "/admin/articles", label: "Bài viết", icon: Newspaper },
   { href: "/admin/reviews", label: "Đánh giá", icon: MessageSquareText },
+  { href: "/admin/article-comments", label: "Bình luận", icon: MessageCircle },
+  { href: "/admin/policies", label: "Chính sách", icon: FileText },
   { href: "/admin/users", label: "Người dùng", icon: Users },
 ];
 
@@ -59,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.jpg" alt="Crab Bébé" className="h-12 w-12 rounded-full object-cover" />
+            <img src="/logo.jpg" alt="Crab Be Bé" className="h-12 w-12 rounded-full object-cover" />
             <p className="font-heading font-bold tracking-[0.2em] text-sm uppercase">
               Quản trị
             </p>

@@ -44,7 +44,7 @@ export default function LoginForm() {
         {/* Panel trái — mực đen, tinh thần boutique cao cấp */}
         <div className="hidden md:flex flex-col justify-center bg-[var(--brand-olive)] text-white p-12">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpg" alt="Crab Bébé" className="h-20 w-20 rounded-full object-cover" />
+          <img src="/logo.jpg" alt="Crab Be Bé" className="h-20 w-20 rounded-full object-cover" />
           <h2 className="font-heading mt-5 text-3xl font-extrabold uppercase leading-tight">
             Chào mừng
             <br />

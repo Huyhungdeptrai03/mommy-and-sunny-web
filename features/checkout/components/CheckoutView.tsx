@@ -586,7 +586,7 @@ export default function CheckoutView() {
             <Link href="/chinh-sach/dieu-khoan" className="underline underline-offset-2 hover:text-[var(--brand-text)]">
               Điều khoản dịch vụ
             </Link>{" "}
-            của Crab Bébé.
+            của Crab Be Bé.
           </p>
 
           <ul className="mt-6 space-y-3 border-t border-[var(--brand-border)] pt-5">

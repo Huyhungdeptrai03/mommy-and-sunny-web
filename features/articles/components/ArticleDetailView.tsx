@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, Calendar, User } from "lucide-react";
 import { Article } from "@/types/article";
+import ArticleComments from "@/features/articles/components/ArticleComments";
 
 export default function ArticleDetailView({
   article,
@@ -72,6 +73,8 @@ export default function ArticleDetailView({
       >
         ← Quay lại {sectionLabel}
       </Link>
+
+      <ArticleComments articleId={article.id} />
     </main>
   );
 }

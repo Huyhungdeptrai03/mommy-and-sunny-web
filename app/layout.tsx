@@ -25,7 +25,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Crab Bébé",
+  title: "Crab Be Bé",
   description: "Imported Beauty & Lifestyle — mỹ phẩm và đồ sống nhập khẩu chính hãng từ Đức, Nhật, Hàn.",
   icons: {
     icon: "/logo.jpg",

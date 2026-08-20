@@ -101,7 +101,7 @@ export default async function Home() {
           <div className="md:col-span-8">
             <span className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-white/60">
               <span className="h-px w-6 bg-white/40" />
-              Crab Bébé — Imported Beauty &amp; Lifestyle
+              Crab Be Bé — Imported Beauty &amp; Lifestyle
             </span>
             <h1 className="font-heading mt-5 text-4xl md:text-6xl font-extrabold uppercase leading-[1.05] tracking-tight">
               Nhập khẩu
@@ -343,7 +343,7 @@ export default async function Home() {
         </section>
       )}
 
-      {/* ===== Vì sao chọn Crab Bébé ===== */}
+      {/* ===== Vì sao chọn Crab Be Bé ===== */}
       <Reveal className="px-6 md:px-12 mt-24">
         <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[var(--brand-border)] border-t border-b border-[var(--brand-border)]">
           {TRUST_BADGES.map((badge, i) => (
@@ -400,7 +400,7 @@ export default async function Home() {
       <section className="px-6 md:px-12 mt-24 mb-20">
         <Reveal>
           <h2 className="font-heading text-lg font-bold uppercase tracking-tight text-[var(--brand-text)] mb-10">
-            Khách hàng nói gì về Crab Bébé
+            Khách hàng nói gì về Crab Be Bé
           </h2>
         </Reveal>
         <div className="grid md:grid-cols-5 gap-8 items-start">

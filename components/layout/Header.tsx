@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ShoppingCart, Heart, User, ChevronDown, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, ChevronDown, Menu, X, Plane } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
@@ -146,7 +146,7 @@ export default function Header() {
 
         <Link href="/" onClick={closeMobileMenu} className="shrink-0 flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpg" alt="Crab Bébé" className="h-16 w-16 rounded-full object-cover" />
+          <img src="/logo.jpg" alt="Crab Be Bé" className="h-16 w-16 rounded-full object-cover" />
         </Link>
 
         {/* Menu desktop — gộp danh mục sản phẩm ngay vào đây (dropdown khi hover "Sản phẩm"),
@@ -213,6 +213,13 @@ export default function Header() {
           </Link>
           <Link href="/lien-he" className="hover:text-[var(--brand-accent)] transition-colors">
             Liên hệ
+          </Link>
+          <Link
+            href="/dat-hang-xach-tay"
+            className="flex items-center gap-1.5 bg-[var(--brand-accent)] text-white px-3 py-1.5 normal-case tracking-normal hover:opacity-90 transition-opacity"
+          >
+            <Plane size={13} />
+            Đặt hàng xách tay
           </Link>
         </nav>
 
@@ -444,6 +451,14 @@ export default function Header() {
             </Link>
             <Link href="/lien-he" onClick={closeMobileMenu} className="py-2.5">
               Liên hệ
+            </Link>
+            <Link
+              href="/dat-hang-xach-tay"
+              onClick={closeMobileMenu}
+              className="mt-2 flex items-center justify-center gap-1.5 bg-[var(--brand-accent)] text-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wide"
+            >
+              <Plane size={14} />
+              Đặt hàng xách tay
             </Link>
           </nav>
         </div>

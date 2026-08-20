@@ -3,9 +3,9 @@ import { Gem, ShieldCheck, Truck, ArrowRight } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 
 export const metadata = {
-  title: "Giới thiệu — Crab Bébé",
+  title: "Giới thiệu — Crab Be Bé",
   description:
-    "Câu chuyện, sứ mệnh và cam kết của Crab Bébé — mỹ phẩm và đồ sống nhập khẩu chính hãng từ Đức, Nhật Bản, Hàn Quốc.",
+    "Câu chuyện, sứ mệnh và cam kết của Crab Be Bé — mỹ phẩm và đồ sống nhập khẩu chính hãng từ Đức, Nhật Bản, Hàn Quốc.",
 };
 
 const VALUES = [
@@ -36,10 +36,10 @@ export default function AboutPage() {
           <h1 className="font-heading mt-5 text-4xl md:text-6xl font-extrabold uppercase leading-[1.05] tracking-tight">
             Câu chuyện
             <br />
-            Crab Bébé
+            Crab Be Bé
           </h1>
           <p className="mt-6 text-white/70 leading-relaxed">
-            Crab Bébé ra đời từ mong muốn mang đến cho mẹ và bé những sản phẩm làm đẹp và đồ
+            Crab Be Bé ra đời từ mong muốn mang đến cho mẹ và bé những sản phẩm làm đẹp và đồ
             sống nhập khẩu chính hãng, được tuyển chọn kỹ càng thay vì chạy theo số lượng —
             nguồn gốc rõ ràng từ Đức, Nhật Bản và Hàn Quốc.
           </p>
@@ -59,7 +59,7 @@ export default function AboutPage() {
           </div>
           <div className="md:col-span-8 space-y-4 text-[15px] leading-relaxed text-[var(--brand-text-muted)]">
             <p>
-              Thay vì bày bán tràn lan, Crab Bébé chọn cách làm chậm hơn: mỗi sản phẩm trước
+              Thay vì bày bán tràn lan, Crab Be Bé chọn cách làm chậm hơn: mỗi sản phẩm trước
               khi lên kệ đều được đội ngũ trực tiếp tìm hiểu nguồn gốc, chất liệu và đánh giá
               thực tế trước khi giới thiệu tới khách hàng.
             </p>

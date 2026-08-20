@@ -19,7 +19,7 @@ body {
 }
 
 :root {
-  /* Theo bảng màu logo Crab Bébé — đỏ đậm sang trọng trên nền trắng, góc vuông.
+  /* Theo bảng màu logo Crab Be Bé — đỏ đậm sang trọng trên nền trắng, góc vuông.
      Giữ nguyên TÊN biến cũ (brand-olive, brand-pink...) để toàn bộ trang (kể cả khu
      Admin) tự động ăn theo bảng màu mới mà không phải sửa từng file. */
   --brand-cream: #fffcfc;

@@ -11,7 +11,7 @@ export default async function Footer() {
         {/* Giới thiệu */}
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpg" alt="Crab Bébé" className="h-28 w-28 rounded-full object-cover" />
+          <img src="/logo.jpg" alt="Crab Be Bé" className="h-28 w-28 rounded-full object-cover" />
           <p className="text-sm text-[var(--brand-text-muted)] mt-3 leading-relaxed">
             Imported Beauty &amp; Lifestyle — mỹ phẩm và đồ sống nhập khẩu chính hãng từ
             Đức, Nhật Bản, Hàn Quốc.
@@ -122,7 +122,7 @@ export default async function Footer() {
 
       <div className="border-t border-[var(--brand-border)]">
         <div className="px-6 md:px-12 py-5 text-center text-xs text-[var(--brand-text-muted)] tracking-wide">
-          © {new Date().getFullYear()} CRAB BÉBÉ. All rights reserved.
+          © {new Date().getFullYear()} CRAB BE BÉ. All rights reserved.
         </div>
       </div>
     </footer>

@@ -1,8 +1,8 @@
 import { Phone, Mail, MapPin, Clock, MessageCircle, Camera } from "lucide-react";
 
 export const metadata = {
-  title: "Liên hệ — Crab Bébé",
-  description: "Thông tin liên hệ Crab Bébé — hotline, email và địa chỉ.",
+  title: "Liên hệ — Crab Be Bé",
+  description: "Thông tin liên hệ Crab Be Bé — hotline, email và địa chỉ.",
 };
 
 const CONTACT_METHODS = [

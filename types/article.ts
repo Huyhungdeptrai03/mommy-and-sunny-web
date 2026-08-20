@@ -15,3 +15,10 @@ export interface ArticleListItem {
 export interface Article extends ArticleListItem {
   content: string;
 }
+
+export interface ArticleComment {
+  id: string;
+  userFullName: string;
+  content: string;
+  createdAt: string;
+}

@@ -160,7 +160,7 @@ export default function CartView() {
           Giỏ hàng đang trống
         </h1>
         <p className="mt-2 text-sm text-[var(--brand-text-muted)]">
-          Hãy khám phá các sản phẩm nhập khẩu chính hãng của Crab Bébé.
+          Hãy khám phá các sản phẩm nhập khẩu chính hãng của Crab Be Bé.
         </p>
         <Link
           href="/"

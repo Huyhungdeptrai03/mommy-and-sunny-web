@@ -10,13 +10,13 @@ export default async function NewsPage() {
     <main className="px-6 md:px-12 py-12">
       <div className="mb-12 max-w-2xl">
         <span className="text-xs uppercase tracking-[0.3em] text-[var(--brand-accent)]">
-          Crab Bébé
+          Crab Be Bé
         </span>
         <h1 className="font-heading mt-2 text-4xl md:text-5xl font-extrabold leading-tight text-[var(--brand-text)]">
           Tin tức
         </h1>
         <p className="mt-3 text-sm text-[var(--brand-text-muted)]">
-          Cập nhật khuyến mãi, bộ sưu tập mới và câu chuyện từ Crab Bébé.
+          Cập nhật khuyến mãi, bộ sưu tập mới và câu chuyện từ Crab Be Bé.
         </p>
       </div>
       <ArticleListView
