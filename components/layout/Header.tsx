@@ -149,14 +149,74 @@ export default function Header() {
           <img src="/logo.jpg" alt="Crab Bébé" className="h-16 w-16 rounded-full object-cover" />
         </Link>
 
-        {/* Menu desktop — giờ chỉ còn "Trang chủ", danh mục chuyển sang CategoryNavBar riêng */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium tracking-wide uppercase text-[var(--brand-text)] shrink-0">
+        {/* Menu desktop — gộp danh mục sản phẩm ngay vào đây (dropdown khi hover "Sản phẩm"),
+            thay cho CategoryNavBar tách rời thành 1 thanh riêng trước đây */}
+        <nav className="hidden md:flex items-center gap-5 text-xs font-medium tracking-wide uppercase text-[var(--brand-text)] shrink-0">
           <Link href="/" className="hover:text-[var(--brand-accent)] transition-colors">
             Trang chủ
           </Link>
+          <Link href="/gioi-thieu" className="hover:text-[var(--brand-accent)] transition-colors">
+            Giới thiệu
+          </Link>
+
+          <div className="group/prod relative">
+            <Link
+              href="/products"
+              className="flex items-center gap-1 hover:text-[var(--brand-accent)] transition-colors"
+            >
+              Sản phẩm
+              {categories.length > 0 && (
+                <ChevronDown
+                  size={11}
+                  className="transition-transform duration-200 group-hover/prod:rotate-180"
+                />
+              )}
+            </Link>
+
+            {categories.length > 0 && (
+              <div className="invisible absolute left-1/2 top-full -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-hover/prod:visible group-hover/prod:opacity-100 z-30">
+                <div className="grid w-[560px] max-w-[90vw] grid-cols-3 gap-x-6 gap-y-5 border border-[var(--brand-border)] bg-white p-6 normal-case shadow-xl">
+                  {categories.map((cat) => (
+                    <div key={cat.id}>
+                      <Link
+                        href={`/products?categorySlug=${cat.slug}`}
+                        className="font-heading mb-2 block border-b border-[var(--brand-border)] pb-2 text-xs font-bold uppercase tracking-wide text-[var(--brand-text)] transition-colors hover:text-[var(--brand-olive)]"
+                      >
+                        {cat.name}
+                      </Link>
+                      {cat.children.length > 0 && (
+                        <ul className="space-y-1.5">
+                          {cat.children.map((child) => (
+                            <li key={child.id}>
+                              <Link
+                                href={`/products?categorySlug=${child.slug}`}
+                                className="text-xs text-[var(--brand-text-muted)] transition-colors hover:text-[var(--brand-text)]"
+                              >
+                                {child.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Link href="/tin-tuc" className="hover:text-[var(--brand-accent)] transition-colors">
+            Tin tức
+          </Link>
+          <Link href="/thu-vien" className="hover:text-[var(--brand-accent)] transition-colors">
+            Thư viện
+          </Link>
+          <Link href="/lien-he" className="hover:text-[var(--brand-accent)] transition-colors">
+            Liên hệ
+          </Link>
         </nav>
 
-        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md" ref={searchBoxRef}>
+        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-[160px] md:max-w-[180px] lg:max-w-md" ref={searchBoxRef}>
           <div className="relative">
             <input
               type="text"
@@ -338,6 +398,9 @@ export default function Header() {
             <Link href="/" onClick={closeMobileMenu} className="py-2.5">
               Trang chủ
             </Link>
+            <Link href="/gioi-thieu" onClick={closeMobileMenu} className="py-2.5">
+              Giới thiệu
+            </Link>
 
             <button
               onClick={() => setIsMobileCategoriesOpen((v) => !v)}
@@ -372,6 +435,16 @@ export default function Header() {
                 ))}
               </div>
             )}
+
+            <Link href="/tin-tuc" onClick={closeMobileMenu} className="py-2.5">
+              Tin tức
+            </Link>
+            <Link href="/thu-vien" onClick={closeMobileMenu} className="py-2.5">
+              Thư viện
+            </Link>
+            <Link href="/lien-he" onClick={closeMobileMenu} className="py-2.5">
+              Liên hệ
+            </Link>
           </nav>
         </div>
       )}

@@ -59,3 +59,123 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ===== Chuyển trang mượt mà — tinh chỉnh tốc độ crossfade mặc định của trình
+   duyệt (View Transitions API), áp dụng cho mọi group được đặt tên ===== */
+::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Hiệu ứng "sống dậy" khi cuộn tới — dùng cùng component Reveal ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ===== Hero — bay nhẹ lên ngay khi trang vừa tải, không cần chờ cuộn ===== */
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-hero-in {
+  animation: hero-in 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ===== Khối trang trí trôi nhẹ — blob mờ phía sau Hero/Newsletter ===== */
+@keyframes float-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(14px, -18px) scale(1.06);
+  }
+}
+.animate-float-slow {
+  animation: float-blob 9s ease-in-out infinite;
+}
+.animate-float-slower {
+  animation: float-blob 13s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+/* ===== Dải chữ chạy vô hạn — cam kết thương hiệu ngay dưới Hero ===== */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee-scroll 26s linear infinite;
+}
+.group\/marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-in,
+  .animate-float-slow,
+  .animate-float-slower,
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* ===== Hoạ tiết chấm bi trang trí — phủ màu qua currentColor ===== */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ===== Nhấp nháy nhẹ — nhãn giảm giá Flash Sale, tạo cảm giác khẩn cấp vừa phải ===== */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-soft {
+    animation: none;
+  }
+}

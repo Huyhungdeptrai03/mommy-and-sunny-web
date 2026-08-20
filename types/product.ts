@@ -45,4 +45,6 @@ export interface ProductListItem {
   purchaseBatchName: string | null;
   minPrice: number;
   maxPrice: number;
+  averageRating: number | null;
+  reviewCount: number;
 }

@@ -7,6 +7,7 @@ export interface ProductFilter {
   categorySlug?: string;
   ageMonths?: number;
   purchaseBatchId?: string;
+  page?: number;
   pageSize?: number;
 }
 

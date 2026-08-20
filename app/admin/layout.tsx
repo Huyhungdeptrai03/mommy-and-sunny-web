@@ -12,6 +12,7 @@ import {
   Users,
   Ship,
   Ticket,
+  Newspaper,
   LogOut,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: "/admin/purchase-batches", label: "Đợt hàng", icon: Ship },
   { href: "/admin/coupons", label: "Mã giảm giá", icon: Ticket },
   { href: "/admin/categories", label: "Danh mục", icon: Tags },
+  { href: "/admin/articles", label: "Bài viết", icon: Newspaper },
   { href: "/admin/reviews", label: "Đánh giá", icon: MessageSquareText },
   { href: "/admin/users", label: "Người dùng", icon: Users },
 ];

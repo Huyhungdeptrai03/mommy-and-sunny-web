@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ViewTransition } from "react";
 import { Geist_Mono, Montserrat, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -43,7 +44,9 @@ export default function RootLayout({
       className={`${geistMono.variable} ${montserrat.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--brand-cream)] text-[var(--brand-text)]">
-        {children}
+        {/* Chuyển trang mượt mà (crossfade) qua View Transitions API của trình duyệt —
+            tự kích hoạt mỗi lần điều hướng route trong App Router, không cần code thêm */}
+        <ViewTransition default="auto">{children}</ViewTransition>
       </body>
     </html>
   );

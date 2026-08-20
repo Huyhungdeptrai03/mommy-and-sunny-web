@@ -1,5 +1,6 @@
 import { getProducts } from "@/features/products/api";
 import ProductCard from "@/features/products/components/ProductCard";
+import Pagination from "@/components/ui/Pagination";
 
 interface ProductsPageProps {
   searchParams: Promise<{
@@ -7,19 +8,33 @@ interface ProductsPageProps {
     categorySlug?: string;
     ageMonths?: string;
     purchaseBatchId?: string;
+    page?: string;
   }>;
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
   const ageMonths = params.ageMonths ? Number(params.ageMonths) : undefined;
+  const page = params.page ? Math.max(1, Number(params.page)) : 1;
 
   const result = await getProducts({
     search: params.search,
     categorySlug: params.categorySlug,
     ageMonths,
     purchaseBatchId: params.purchaseBatchId,
+    page,
   });
+
+  function buildHref(targetPage: number) {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.categorySlug) query.set("categorySlug", params.categorySlug);
+    if (params.ageMonths) query.set("ageMonths", params.ageMonths);
+    if (params.purchaseBatchId) query.set("purchaseBatchId", params.purchaseBatchId);
+    if (targetPage > 1) query.set("page", String(targetPage));
+    const qs = query.toString();
+    return qs ? `/products?${qs}` : "/products";
+  }
 
   let heading = "Tất cả sản phẩm";
   if (params.search) {
@@ -54,6 +69,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           ))}
         </div>
       )}
+
+      <Pagination page={result.page} totalPages={result.totalPages} buildHref={buildHref} />
     </main>
   );
 }

@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import axios from "axios";
+import {
+  MapPin,
+  Wallet,
+  Truck,
+  MessageSquare,
+  Tag,
+  ChevronRight,
+  ShieldCheck,
+  RotateCcw,
+  PartyPopper,
+} from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { getCart } from "@/features/cart/api";
@@ -16,8 +27,15 @@ import { Address } from "@/types/address";
 
 type PaymentMethod = "COD" | "Momo";
 
+// Vận chuyển hiện đang miễn phí toàn bộ đơn hàng ở backend (OrderService — MVP) —
+// giữ đồng bộ với thông báo ở trang Giỏ hàng, KHÔNG bịa ngưỡng "miễn phí từ X đồng"
+const SUMMARY_PERKS = [
+  { icon: Truck, text: "Miễn phí vận chuyển toàn bộ đơn hàng" },
+  { icon: RotateCcw, text: "Đổi trả trong 7 ngày nếu lỗi từ shop" },
+  { icon: ShieldCheck, text: "Thanh toán an toàn, bảo mật" },
+];
+
 export default function CheckoutView() {
-  const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const setItemCount = useCartStore((state) => state.setItemCount);
 
@@ -173,7 +191,7 @@ export default function CheckoutView() {
   }
 
   const inputClass =
-    "w-full border border-[var(--brand-border)] px-4 py-2.5 bg-white focus:outline-none focus:border-[var(--brand-text)]";
+    "w-full border border-[var(--brand-border)] px-4 py-2.5 bg-white focus:outline-none focus:border-[var(--brand-text)] transition-colors";
 
   if (!isAuthenticated) {
     return (
@@ -184,14 +202,25 @@ export default function CheckoutView() {
   }
 
   if (isLoading) {
-    return <main className="max-w-2xl mx-auto px-6 py-16 text-[var(--brand-text-muted)]">Đang tải...</main>;
+    return (
+      <main className="px-6 md:px-12 py-12 max-w-5xl mx-auto">
+        <div className="h-9 w-40 bg-[var(--brand-cream-dark)] animate-pulse mb-10" />
+        <div className="grid lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="h-24 bg-[var(--brand-cream-dark)] animate-pulse" />
+            <div className="h-24 bg-[var(--brand-cream-dark)] animate-pulse" />
+          </div>
+          <div className="h-72 bg-[var(--brand-cream-dark)] animate-pulse" />
+        </div>
+      </main>
+    );
   }
 
   if (orderResult) {
     return (
       <main className="max-w-lg mx-auto px-6 py-20 text-center">
-        <div className="w-16 h-16 border border-[var(--brand-border)] flex items-center justify-center mx-auto mb-6 text-3xl">
-          🎉
+        <div className="w-16 h-16 rounded-full border border-[var(--brand-border)] flex items-center justify-center mx-auto mb-6 text-[var(--brand-olive)]">
+          <PartyPopper size={26} />
         </div>
         <h1 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight text-[var(--brand-text)] leading-tight">
           Đặt hàng thành công!
@@ -211,12 +240,20 @@ export default function CheckoutView() {
             &ldquo;Đơn hàng&rdquo; để thử thanh toán lại, hoặc liên hệ hỗ trợ.
           </p>
         )}
-        <button
-          onClick={() => router.push("/")}
-          className="mt-10 bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest px-8 py-3.5 hover:bg-black transition-colors"
-        >
-          Tiếp tục mua sắm
-        </button>
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/orders"
+            className="border border-[var(--brand-border)] text-[var(--brand-text)] text-xs font-semibold uppercase tracking-widest px-8 py-3.5 hover:border-[var(--brand-text)] transition-colors"
+          >
+            Xem đơn hàng
+          </Link>
+          <Link
+            href="/"
+            className="bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest px-8 py-3.5 hover:bg-black transition-colors"
+          >
+            Tiếp tục mua sắm
+          </Link>
+        </div>
       </main>
     );
   }
@@ -238,233 +275,330 @@ export default function CheckoutView() {
     setPaymentMethod("COD");
   }
 
+  const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  const finalTotal = Math.max(0, cart.subTotal - (appliedCoupon?.discountAmount ?? 0));
+
   return (
-    <main className="max-w-2xl mx-auto px-6 py-12">
+    <main className="px-6 md:px-12 py-12 max-w-5xl mx-auto">
+      {/* Breadcrumb — nối liền mạch với trang Giỏ hàng phía trước */}
+      <nav className="mb-6 flex items-center gap-1.5 text-xs text-[var(--brand-text-muted)]">
+        <Link href="/" className="hover:text-[var(--brand-text)] transition-colors">
+          Trang chủ
+        </Link>
+        <ChevronRight size={12} />
+        <Link href="/cart" className="hover:text-[var(--brand-text)] transition-colors">
+          Giỏ hàng
+        </Link>
+        <ChevronRight size={12} />
+        <span className="font-medium text-[var(--brand-text)]">Đặt hàng</span>
+      </nav>
+
       <h1 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight text-[var(--brand-text)] mb-10">
         Đặt hàng
       </h1>
 
       {error && (
-        <p className="mb-6 text-sm text-red-600 bg-red-50 p-3">
+        <p className="mb-6 text-sm text-red-600 bg-red-50 border border-red-200 p-3">
           {error}
         </p>
       )}
 
-      <section className="mb-8">
-        <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-3">
-          Địa chỉ giao hàng
-        </h2>
+      <div className="grid lg:grid-cols-3 gap-10 items-start">
+        {/* ===== Cột trái — các bước hoàn tất đơn hàng, đánh số rõ ràng ===== */}
+        <div className="lg:col-span-2 space-y-8">
+          <section>
+            <h2 className="flex items-center gap-2.5 font-heading font-semibold text-[var(--brand-text)] mb-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-[var(--brand-olive)] text-xs font-bold text-white">
+                1
+              </span>
+              <MapPin size={16} className="text-[var(--brand-text-muted)]" />
+              Địa chỉ giao hàng
+            </h2>
 
-        {addresses.length > 0 && !showAddressForm && (
-          <div className="space-y-3">
-            {addresses.map((addr) => (
-              <label
-                key={addr.id}
-                className={`flex items-start gap-3 border-2 p-4 cursor-pointer transition-colors ${
-                  selectedAddressId === addr.id
-                    ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
-                    : "border-[var(--brand-border)] bg-white"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="address"
-                  checked={selectedAddressId === addr.id}
-                  onChange={() => setSelectedAddressId(addr.id)}
-                  className="mt-1"
-                />
-                <div>
-                  <p className="font-medium text-[var(--brand-text)]">
-                    {addr.recipientName} — {addr.phoneNumber}
-                  </p>
-                  <p className="text-sm text-[var(--brand-text-muted)]">
-                    {[addr.detailAddress, addr.ward, addr.district, addr.province]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </p>
-                </div>
-              </label>
-            ))}
-            <button
-              type="button"
-              onClick={() => setShowAddressForm(true)}
-              className="text-sm text-[var(--brand-text)] font-medium underline"
-            >
-              + Thêm địa chỉ mới
-            </button>
-          </div>
-        )}
-
-        {showAddressForm && (
-          <div className="space-y-3 bg-[var(--brand-cream-dark)] p-5">
-            <input
-              placeholder="Họ tên người nhận"
-              value={newAddress.recipientName}
-              onChange={(e) => setNewAddress((p) => ({ ...p, recipientName: e.target.value }))}
-              className={inputClass}
-            />
-            <input
-              placeholder="Số điện thoại"
-              value={newAddress.phoneNumber}
-              onChange={(e) => setNewAddress((p) => ({ ...p, phoneNumber: e.target.value }))}
-              className={inputClass}
-            />
-            <AddressSelector
-              province={newAddress.province}
-              ward={newAddress.ward}
-              onProvinceChange={(name) => setNewAddress((p) => ({ ...p, province: name }))}
-              onWardChange={(name) => setNewAddress((p) => ({ ...p, ward: name }))}
-              inputClass={inputClass}
-            />
-            <input
-              placeholder="Số nhà, tên đường, thôn/xóm (VD: 12 Nguyễn Trãi)"
-              value={newAddress.detailAddress}
-              onChange={(e) => setNewAddress((p) => ({ ...p, detailAddress: e.target.value }))}
-              className={inputClass}
-            />
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleCreateAddress}
-                className="bg-[var(--brand-olive)] text-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors"
-              >
-                Lưu địa chỉ
-              </button>
-              {addresses.length > 0 && (
+            {addresses.length > 0 && !showAddressForm && (
+              <div className="space-y-3">
+                {addresses.map((addr) => (
+                  <label
+                    key={addr.id}
+                    className={`flex items-start gap-3 border-2 p-4 cursor-pointer transition-colors ${
+                      selectedAddressId === addr.id
+                        ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
+                        : "border-[var(--brand-border)] bg-white hover:border-[var(--brand-text-muted)]"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="address"
+                      checked={selectedAddressId === addr.id}
+                      onChange={() => setSelectedAddressId(addr.id)}
+                      className="mt-1 accent-[var(--brand-olive)]"
+                    />
+                    <div>
+                      <p className="font-medium text-[var(--brand-text)]">
+                        {addr.recipientName} — {addr.phoneNumber}
+                      </p>
+                      <p className="text-sm text-[var(--brand-text-muted)]">
+                        {[addr.detailAddress, addr.ward, addr.district, addr.province]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    </div>
+                  </label>
+                ))}
                 <button
                   type="button"
-                  onClick={() => setShowAddressForm(false)}
-                  className="text-sm text-[var(--brand-text-muted)]"
+                  onClick={() => setShowAddressForm(true)}
+                  className="text-sm text-[var(--brand-text)] font-medium underline underline-offset-2"
                 >
-                  Hủy
+                  + Thêm địa chỉ mới
                 </button>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
+              </div>
+            )}
 
-      <section className="mb-8">
-        <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-3">
-          Phương thức thanh toán
-        </h2>
-
-        {hasPreOrderItems && (
-          <p className="text-sm text-[var(--brand-text-muted)] bg-[var(--brand-cream-dark)] p-3 mb-3">
-            Đơn hàng có sản phẩm đặt trước (hàng xách tay) — chỉ hỗ trợ thanh toán COD.
-            Tiền cọc và thanh toán còn lại sẽ được shop liên hệ hướng dẫn riêng.
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {(["COD", "Momo"] as PaymentMethod[])
-            .filter((method) => method === "COD" || !hasPreOrderItems)
-            .map((method) => (
-              <label
-                key={method}
-                className={`flex items-center gap-3 border-2 p-4 cursor-pointer transition-colors ${
-                  paymentMethod === method
-                    ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
-                    : "border-[var(--brand-border)] bg-white"
-                }`}
-              >
+            {showAddressForm && (
+              <div className="space-y-3 bg-[var(--brand-cream-dark)] p-5">
                 <input
-                  type="radio"
-                  name="paymentMethod"
-                  checked={paymentMethod === method}
-                  onChange={() => setPaymentMethod(method)}
+                  placeholder="Họ tên người nhận"
+                  value={newAddress.recipientName}
+                  onChange={(e) => setNewAddress((p) => ({ ...p, recipientName: e.target.value }))}
+                  className={inputClass}
                 />
-                <span className="text-[var(--brand-text)]">
-                  {method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví Momo"}
-                </span>
-              </label>
-            ))}
-        </div>
-      </section>
+                <input
+                  placeholder="Số điện thoại"
+                  value={newAddress.phoneNumber}
+                  onChange={(e) => setNewAddress((p) => ({ ...p, phoneNumber: e.target.value }))}
+                  className={inputClass}
+                />
+                <AddressSelector
+                  province={newAddress.province}
+                  ward={newAddress.ward}
+                  onProvinceChange={(name) => setNewAddress((p) => ({ ...p, province: name }))}
+                  onWardChange={(name) => setNewAddress((p) => ({ ...p, ward: name }))}
+                  inputClass={inputClass}
+                />
+                <input
+                  placeholder="Số nhà, tên đường, thôn/xóm (VD: 12 Nguyễn Trãi)"
+                  value={newAddress.detailAddress}
+                  onChange={(e) => setNewAddress((p) => ({ ...p, detailAddress: e.target.value }))}
+                  className={inputClass}
+                />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCreateAddress}
+                    className="bg-[var(--brand-olive)] text-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors"
+                  >
+                    Lưu địa chỉ
+                  </button>
+                  {addresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressForm(false)}
+                      className="text-sm text-[var(--brand-text-muted)]"
+                    >
+                      Hủy
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
 
-      <section className="mb-8">
-        <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-3">
-          Ghi chú (không bắt buộc)
-        </h2>
-        <textarea
-          value={customerNote}
-          onChange={(e) => setCustomerNote(e.target.value)}
-          rows={2}
-          className={inputClass}
-        />
-      </section>
+          <section>
+            <h2 className="flex items-center gap-2.5 font-heading font-semibold text-[var(--brand-text)] mb-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-[var(--brand-olive)] text-xs font-bold text-white">
+                2
+              </span>
+              <Wallet size={16} className="text-[var(--brand-text-muted)]" />
+              Phương thức thanh toán
+            </h2>
 
-      <section className="mb-8">
-        <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-3">
-          Mã giảm giá
-        </h2>
-        {appliedCoupon ? (
-          <div className="flex items-center justify-between border border-[var(--brand-border)] px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-[var(--brand-text)]">
-                {appliedCoupon.code}
+            {hasPreOrderItems && (
+              <p className="text-sm text-[var(--brand-text-muted)] bg-[var(--brand-cream-dark)] p-3 mb-3">
+                Đơn hàng có sản phẩm đặt trước (hàng xách tay) — chỉ hỗ trợ thanh toán COD.
+                Tiền cọc và thanh toán còn lại sẽ được shop liên hệ hướng dẫn riêng.
               </p>
-              <p className="text-xs text-[var(--brand-text-muted)]">
-                Giảm {formatCurrency(appliedCoupon.discountAmount)}
-              </p>
+            )}
+
+            <div className="space-y-3">
+              {(["COD", "Momo"] as PaymentMethod[])
+                .filter((method) => method === "COD" || !hasPreOrderItems)
+                .map((method) => (
+                  <label
+                    key={method}
+                    className={`flex items-center gap-3 border-2 p-4 cursor-pointer transition-colors ${
+                      paymentMethod === method
+                        ? "border-[var(--brand-text)] bg-[var(--brand-cream-dark)]"
+                        : "border-[var(--brand-border)] bg-white hover:border-[var(--brand-text-muted)]"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={paymentMethod === method}
+                      onChange={() => setPaymentMethod(method)}
+                      className="accent-[var(--brand-olive)]"
+                    />
+                    {method === "COD" ? (
+                      <Truck size={16} className="text-[var(--brand-text-muted)]" />
+                    ) : (
+                      <Wallet size={16} className="text-[var(--brand-text-muted)]" />
+                    )}
+                    <span className="text-[var(--brand-text)]">
+                      {method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví Momo"}
+                    </span>
+                  </label>
+                ))}
             </div>
-            <button
-              onClick={handleRemoveCoupon}
-              className="text-xs text-red-600 hover:underline"
-            >
-              Gỡ mã
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              placeholder="Nhập mã giảm giá"
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+          </section>
+
+          <section>
+            <h2 className="flex items-center gap-2.5 font-heading font-semibold text-[var(--brand-text)] mb-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-[var(--brand-olive)] text-xs font-bold text-white">
+                3
+              </span>
+              <MessageSquare size={16} className="text-[var(--brand-text-muted)]" />
+              Ghi chú (không bắt buộc)
+            </h2>
+            <textarea
+              value={customerNote}
+              onChange={(e) => setCustomerNote(e.target.value)}
+              rows={3}
+              placeholder="VD: Giao giờ hành chính, gọi trước khi giao..."
               className={inputClass}
             />
-            <button
-              onClick={handleApplyCoupon}
-              disabled={isApplyingCoupon}
-              className="bg-[var(--brand-olive)] text-white px-5 py-2 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50 whitespace-nowrap"
-            >
-              {isApplyingCoupon ? "Đang kiểm tra..." : "Áp dụng"}
-            </button>
+          </section>
+        </div>
+
+        {/* ===== Cột phải — tóm tắt đơn hàng: danh sách sản phẩm + mã giảm giá + tổng tiền ===== */}
+        <aside className="border border-[var(--brand-border)] bg-white p-6 lg:sticky lg:top-24">
+          <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-[var(--brand-text)] mb-5">
+            Đơn hàng ({totalQuantity} sản phẩm)
+          </h2>
+
+          <div className="max-h-64 overflow-y-auto space-y-4 pr-1 no-scrollbar">
+            {cart.items.map((item) => (
+              <div key={item.itemId} className="flex items-start gap-3">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-[var(--brand-cream-dark)]">
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt={item.productName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : null}
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand-text)] px-1 text-[10px] font-bold text-white">
+                    {item.quantity}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-[var(--brand-text)]">{item.productName}</p>
+                  {(item.size || item.color) && (
+                    <p className="text-xs text-[var(--brand-text-muted)]">
+                      {[item.size, item.color].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </div>
+                <p className="shrink-0 text-sm font-semibold text-[var(--brand-text)]">
+                  {formatCurrency(item.unitPrice * item.quantity)}
+                </p>
+              </div>
+            ))}
           </div>
-        )}
-        {couponMessage && (
-          <p className={`text-sm mt-2 ${couponMessage.isError ? "text-red-600" : "text-[var(--brand-text)]"}`}>
-            {couponMessage.text}
+
+          <div className="mt-5 border-t border-[var(--brand-border)] pt-5">
+            <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--brand-text)]">
+              <Tag size={13} />
+              Mã giảm giá
+            </h3>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between border border-[var(--brand-border)] px-3 py-2.5">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--brand-text)]">
+                    {appliedCoupon.code}
+                  </p>
+                  <p className="text-xs text-[var(--brand-text-muted)]">
+                    Giảm {formatCurrency(appliedCoupon.discountAmount)}
+                  </p>
+                </div>
+                <button onClick={handleRemoveCoupon} className="text-xs text-red-600 hover:underline">
+                  Gỡ mã
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  placeholder="Nhập mã"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  className={`${inputClass} py-2 text-sm`}
+                />
+                <button
+                  onClick={handleApplyCoupon}
+                  disabled={isApplyingCoupon}
+                  className="whitespace-nowrap bg-[var(--brand-olive)] px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50"
+                >
+                  {isApplyingCoupon ? "..." : "Áp dụng"}
+                </button>
+              </div>
+            )}
+            {couponMessage && (
+              <p className={`mt-2 text-sm ${couponMessage.isError ? "text-red-600" : "text-[var(--brand-text)]"}`}>
+                {couponMessage.text}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-5 space-y-2 border-t border-[var(--brand-border)] pt-5 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--brand-text-muted)]">Tạm tính</span>
+              <span className="font-medium text-[var(--brand-text)]">{formatCurrency(cart.subTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--brand-text-muted)]">Phí vận chuyển</span>
+              <span className="font-medium text-[var(--brand-olive)]">Miễn phí</span>
+            </div>
+            {appliedCoupon && appliedCoupon.discountAmount > 0 && (
+              <div className="flex items-center justify-between text-red-600">
+                <span>Giảm giá ({appliedCoupon.code})</span>
+                <span>-{formatCurrency(appliedCoupon.discountAmount)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--brand-border)] pt-4">
+            <span className="font-medium text-[var(--brand-text)]">Tổng cộng</span>
+            <span className="font-heading text-2xl font-extrabold text-[var(--brand-text)]">
+              {formatCurrency(finalTotal)}
+            </span>
+          </div>
+
+          <button
+            onClick={handleSubmitOrder}
+            disabled={isSubmitting}
+            className="mt-6 w-full bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest py-3.5 hover:bg-black transition-colors disabled:opacity-50"
+          >
+            {isSubmitting ? "Đang xử lý..." : "Xác nhận đặt hàng"}
+          </button>
+          <p className="mt-3 text-center text-[11px] text-[var(--brand-text-muted)]">
+            Bằng việc đặt hàng, bạn đồng ý với{" "}
+            <Link href="/chinh-sach/dieu-khoan" className="underline underline-offset-2 hover:text-[var(--brand-text)]">
+              Điều khoản dịch vụ
+            </Link>{" "}
+            của Crab Bébé.
           </p>
-        )}
-      </section>
 
-      <section className="mb-8 pt-6">
-        <div className="flex items-center justify-between text-sm text-[var(--brand-text-muted)] mb-1">
-          <span>Tạm tính</span>
-          <span>{formatCurrency(cart.subTotal)}</span>
-        </div>
-        {appliedCoupon && appliedCoupon.discountAmount > 0 && (
-          <div className="flex items-center justify-between text-sm text-red-600 mb-1">
-            <span>Giảm giá ({appliedCoupon.code})</span>
-            <span>-{formatCurrency(appliedCoupon.discountAmount)}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-[var(--brand-text-muted)]">Tổng cộng</span>
-          <span className="font-heading text-3xl font-extrabold text-[var(--brand-text)]">
-            {formatCurrency(Math.max(0, cart.subTotal - (appliedCoupon?.discountAmount ?? 0)))}
-          </span>
-        </div>
-      </section>
-
-      <button
-        onClick={handleSubmitOrder}
-        disabled={isSubmitting}
-        className="w-full bg-[var(--brand-olive)] text-white text-xs font-semibold uppercase tracking-widest py-3.5 hover:bg-black transition-colors disabled:opacity-50"
-      >
-        {isSubmitting ? "Đang xử lý..." : "Xác nhận đặt hàng"}
-      </button>
+          <ul className="mt-6 space-y-3 border-t border-[var(--brand-border)] pt-5">
+            {SUMMARY_PERKS.map((perk) => (
+              <li key={perk.text} className="flex items-center gap-2.5 text-xs text-[var(--brand-text-muted)]">
+                <perk.icon size={15} className="shrink-0 text-[var(--brand-text)]" />
+                {perk.text}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
     </main>
   );
 }
