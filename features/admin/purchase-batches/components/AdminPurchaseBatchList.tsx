@@ -98,9 +98,24 @@ export default function AdminPurchaseBatchList() {
     }
   }
 
+  function validateBatchDates(openDate: string, closeDate: string, estimatedArrivalDate: string): string | null {
+    if (closeDate && openDate && new Date(closeDate) <= new Date(openDate)) {
+      return "Ngày chốt đơn phải sau ngày mở";
+    }
+    if (estimatedArrivalDate && closeDate && new Date(estimatedArrivalDate) < new Date(closeDate)) {
+      return "Ngày dự kiến về kho phải sau ngày chốt đơn";
+    }
+    return null;
+  }
+
   async function handleCreate() {
     if (!newBatch.name.trim() || !newBatch.openDate || !newBatch.closeDate) {
       setError("Vui lòng nhập đủ tên, ngày mở và ngày chốt đơn");
+      return;
+    }
+    const dateError = validateBatchDates(newBatch.openDate, newBatch.closeDate, newBatch.estimatedArrivalDate);
+    if (dateError) {
+      setError(dateError);
       return;
     }
     setIsCreating(true);
@@ -142,6 +157,15 @@ export default function AdminPurchaseBatchList() {
   }
 
   async function handleSaveEdit(id: string) {
+    if (!editData.name.trim() || !editData.openDate || !editData.closeDate) {
+      setError("Vui lòng nhập đủ tên, ngày mở và ngày chốt đơn");
+      return;
+    }
+    const dateError = validateBatchDates(editData.openDate, editData.closeDate, editData.estimatedArrivalDate);
+    if (dateError) {
+      setError(dateError);
+      return;
+    }
     setError(null);
     try {
       await updatePurchaseBatch(id, {

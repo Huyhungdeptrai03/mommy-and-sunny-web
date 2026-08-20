@@ -52,6 +52,10 @@ export default function AdminPolicyList() {
       setError("Tiêu đề không được để trống");
       return;
     }
+    if (!editData.content.trim()) {
+      setError("Nội dung không được để trống");
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {

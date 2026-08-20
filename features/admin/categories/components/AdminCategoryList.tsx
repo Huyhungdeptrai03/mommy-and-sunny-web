@@ -8,6 +8,7 @@ import {
   updateCategory,
   deleteCategory,
 } from "@/features/admin/categories/api";
+import { isValidUrl } from "@/lib/validation";
 import { AdminCategory } from "@/types/adminCategory";
 
 // Sắp xếp danh mục theo dạng cây (cha trước, con sau, thụt lề) để hiển thị dropdown
@@ -77,6 +78,10 @@ export default function AdminCategoryList() {
       setError("Tên danh mục không được để trống");
       return;
     }
+    if (newImageUrl.trim() && !isValidUrl(newImageUrl)) {
+      setError("URL ảnh không hợp lệ");
+      return;
+    }
     setIsCreating(true);
     setError(null);
     try {
@@ -106,6 +111,14 @@ export default function AdminCategoryList() {
   }
 
   async function handleSaveEdit(id: string) {
+    if (!editData.name.trim()) {
+      setError("Tên danh mục không được để trống");
+      return;
+    }
+    if (editData.imageUrl.trim() && !isValidUrl(editData.imageUrl)) {
+      setError("URL ảnh không hợp lệ");
+      return;
+    }
     setError(null);
     try {
       await updateCategory(id, {
@@ -155,12 +168,6 @@ export default function AdminCategoryList() {
           Thêm danh mục mới
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            placeholder="Tên danh mục"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            className={inputClass}
-          />
           <select
             value={newParentId}
             onChange={(e) => setNewParentId(e.target.value)}
@@ -173,6 +180,12 @@ export default function AdminCategoryList() {
               </option>
             ))}
           </select>
+          <input
+            placeholder="Tên danh mục"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className={inputClass}
+          />
           <input
             placeholder="URL ảnh (không bắt buộc)"
             value={newImageUrl}
@@ -194,8 +207,8 @@ export default function AdminCategoryList() {
         <table className="w-full text-sm">
           <thead className="bg-[var(--brand-cream-dark)] text-left">
             <tr>
-              <th className="p-3 font-heading text-[var(--brand-text)]">Tên</th>
               <th className="p-3 font-heading text-[var(--brand-text)]">Danh mục cha</th>
+              <th className="p-3 font-heading text-[var(--brand-text)]">Tên</th>
               <th className="p-3 font-heading text-[var(--brand-text)]">Số sản phẩm</th>
               <th className="p-3 font-heading text-[var(--brand-text)]">Hành động</th>
             </tr>
@@ -213,13 +226,6 @@ export default function AdminCategoryList() {
                   <tr key={c.id} className="border-t border-[var(--brand-border)]">
                     <td className="p-3" colSpan={4}>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <input
-                          value={editData.name}
-                          onChange={(e) =>
-                            setEditData((p) => ({ ...p, name: e.target.value }))
-                          }
-                          className={inputClass}
-                        />
                         <select
                           value={editData.parentCategoryId}
                           onChange={(e) =>
@@ -236,6 +242,13 @@ export default function AdminCategoryList() {
                               </option>
                             ))}
                         </select>
+                        <input
+                          value={editData.name}
+                          onChange={(e) =>
+                            setEditData((p) => ({ ...p, name: e.target.value }))
+                          }
+                          className={inputClass}
+                        />
                         <input
                           placeholder="URL ảnh"
                           value={editData.imageUrl}
@@ -263,10 +276,10 @@ export default function AdminCategoryList() {
                   </tr>
                 ) : (
                   <tr key={c.id} className="border-t border-[var(--brand-border)]">
-                    <td className="p-3 font-medium text-[var(--brand-text)]">{c.name}</td>
                     <td className="p-3 text-[var(--brand-text-muted)]">
                       {c.parentCategoryName ?? "—"}
                     </td>
+                    <td className="p-3 font-medium text-[var(--brand-text)]">{c.name}</td>
                     <td className="p-3 text-[var(--brand-text)]">{c.productCount}</td>
                     <td className="p-3">
                       <div className="flex gap-3">

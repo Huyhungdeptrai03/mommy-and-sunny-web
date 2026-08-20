@@ -37,6 +37,10 @@ export default function ArticleComments({ articleId }: { articleId: string }) {
       setError("Nội dung bình luận không được để trống");
       return;
     }
+    if (content.trim().length > 2000) {
+      setError("Bình luận tối đa 2000 ký tự");
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
     try {
@@ -67,6 +71,7 @@ export default function ArticleComments({ articleId }: { articleId: string }) {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Chia sẻ suy nghĩ của bạn về bài viết này..."
             rows={3}
+            maxLength={2000}
             className="w-full border border-[var(--brand-border)] px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand-text)]"
           />
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}

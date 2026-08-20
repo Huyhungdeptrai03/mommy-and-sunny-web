@@ -83,6 +83,30 @@ export default function AdminCouponList() {
     }
   }
 
+  // Dùng chung cho cả tạo mới và sửa — trả về thông báo lỗi đầu tiên gặp phải, null nếu hợp lệ
+  function validateForm(form: FormState): string | null {
+    const discountValue = Number(form.discountValue);
+    if (!form.discountValue || discountValue <= 0) {
+      return "Giá trị giảm phải lớn hơn 0";
+    }
+    if (form.discountType === "Percentage" && discountValue > 100) {
+      return "Giảm giá theo % không được vượt quá 100%";
+    }
+    if (form.maxDiscountAmount && Number(form.maxDiscountAmount) < 0) {
+      return "Số tiền giảm tối đa không được âm";
+    }
+    if (form.minOrderValue && Number(form.minOrderValue) < 0) {
+      return "Đơn tối thiểu không được âm";
+    }
+    if (form.totalUsageLimit && Number(form.totalUsageLimit) <= 0) {
+      return "Tổng lượt dùng phải lớn hơn 0";
+    }
+    if (form.startDate && form.endDate && new Date(form.endDate) <= new Date(form.startDate)) {
+      return "Ngày kết thúc phải sau ngày bắt đầu";
+    }
+    return null;
+  }
+
   function buildPayload(form: FormState, includeCode: boolean): CouponPayload {
     return {
       ...(includeCode ? { code: form.code } : {}),
@@ -100,6 +124,11 @@ export default function AdminCouponList() {
   async function handleCreate() {
     if (!newForm.code.trim() || !newForm.discountValue || !newForm.startDate || !newForm.endDate) {
       setError("Vui lòng nhập đủ mã, giá trị giảm, ngày bắt đầu và kết thúc");
+      return;
+    }
+    const validationError = validateForm(newForm);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setIsCreating(true);
@@ -131,6 +160,11 @@ export default function AdminCouponList() {
   }
 
   async function handleSaveEdit(id: string, isActive: boolean) {
+    const validationError = validateForm(editForm);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setError(null);
     try {
       await updateCoupon(id, { ...buildPayload(editForm, false), isActive });
@@ -225,6 +259,8 @@ export default function AdminCouponList() {
             </label>
             <input
               type="number"
+              min={0}
+              max={newForm.discountType === "Percentage" ? 100 : undefined}
               value={newForm.discountValue}
               onChange={(e) => setNewForm((p) => ({ ...p, discountValue: e.target.value }))}
               className={inputClass}

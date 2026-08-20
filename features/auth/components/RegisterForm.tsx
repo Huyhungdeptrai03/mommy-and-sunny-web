@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { register } from "@/features/auth/api";
+import { isValidVnPhone } from "@/lib/validation";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -21,6 +22,11 @@ export default function RegisterForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (phoneNumber.trim() && !isValidVnPhone(phoneNumber)) {
+      setError("Số điện thoại không hợp lệ (VD: 0912345678)");
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 

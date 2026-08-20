@@ -22,6 +22,7 @@ import AddressSelector from "./AddressSelector";
 import { createOrder } from "@/features/orders/api";
 import { applyCoupon } from "@/features/checkout/couponApi";
 import { formatCurrency } from "@/lib/utils";
+import { isValidVnPhone } from "@/lib/validation";
 import { Cart } from "@/types/cart";
 import { Address } from "@/types/address";
 
@@ -104,6 +105,22 @@ export default function CheckoutView() {
 
   async function handleCreateAddress() {
     setError(null);
+
+    if (
+      !newAddress.recipientName.trim() ||
+      !newAddress.phoneNumber.trim() ||
+      !newAddress.province.trim() ||
+      !newAddress.ward.trim() ||
+      !newAddress.detailAddress.trim()
+    ) {
+      setError("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng");
+      return;
+    }
+    if (!isValidVnPhone(newAddress.phoneNumber)) {
+      setError("Số điện thoại không hợp lệ (VD: 0912345678)");
+      return;
+    }
+
     try {
       const created = await createAddress({ ...newAddress, isDefault: addresses.length === 0 });
       setAddresses((prev) => [...prev, created]);
@@ -364,6 +381,7 @@ export default function CheckoutView() {
                   className={inputClass}
                 />
                 <input
+                  type="tel"
                   placeholder="Số điện thoại"
                   value={newAddress.phoneNumber}
                   onChange={(e) => setNewAddress((p) => ({ ...p, phoneNumber: e.target.value }))}

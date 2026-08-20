@@ -5,6 +5,7 @@ import axios from "axios";
 import { X } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { createPersonalImportRequest, uploadPersonalImportImage } from "@/features/personal-import/api";
+import { isValidEmail, isValidUrl, isValidVnPhone } from "@/lib/validation";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -70,6 +71,18 @@ export default function PersonalImportRequestForm() {
     e.preventDefault();
     if (!productName.trim() || !customerName.trim() || !customerPhone.trim()) {
       setError("Vui lòng nhập tên sản phẩm, tên và số điện thoại liên hệ");
+      return;
+    }
+    if (!isValidVnPhone(customerPhone)) {
+      setError("Số điện thoại không hợp lệ (VD: 0912345678)");
+      return;
+    }
+    if (customerEmail.trim() && !isValidEmail(customerEmail)) {
+      setError("Email không hợp lệ");
+      return;
+    }
+    if (productLink.trim() && !isValidUrl(productLink)) {
+      setError("Link sản phẩm không hợp lệ");
       return;
     }
 
@@ -229,8 +242,10 @@ export default function PersonalImportRequestForm() {
             Số điện thoại <span className="text-red-600">*</span>
           </label>
           <input
+            type="tel"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
+            placeholder="VD: 0912345678"
             className={inputClass}
           />
         </div>
@@ -241,6 +256,7 @@ export default function PersonalImportRequestForm() {
           Email (không bắt buộc)
         </label>
         <input
+          type="email"
           value={customerEmail}
           onChange={(e) => setCustomerEmail(e.target.value)}
           className={inputClass}

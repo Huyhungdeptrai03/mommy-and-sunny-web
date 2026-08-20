@@ -119,8 +119,8 @@ export default function AdminArticleList() {
   }
 
   async function handleSaveEdit(id: string) {
-    if (!editForm.title.trim()) {
-      setError("Vui lòng nhập tiêu đề");
+    if (!editForm.title.trim() || !editForm.content.trim()) {
+      setError("Vui lòng nhập tiêu đề và nội dung");
       return;
     }
     setError(null);

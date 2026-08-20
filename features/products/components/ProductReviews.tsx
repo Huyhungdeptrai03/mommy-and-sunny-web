@@ -44,6 +44,10 @@ export default function ProductReviews({ productId }: { productId: string }) {
   }
 
   async function handleSubmit() {
+    if (comment.trim().length > 2000) {
+      setError("Đánh giá tối đa 2000 ký tự");
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
     try {
@@ -145,6 +149,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
             onChange={(e) => setComment(e.target.value)}
             placeholder="Chia sẻ cảm nhận của bạn về sản phẩm (không bắt buộc)"
             rows={3}
+            maxLength={2000}
             className="w-full border border-[var(--brand-border)] px-4 py-2 text-sm mb-3 focus:outline-none focus:border-[var(--brand-text)]"
           />
           {error && <p className="text-sm text-red-600 mb-3">{error}</p>}

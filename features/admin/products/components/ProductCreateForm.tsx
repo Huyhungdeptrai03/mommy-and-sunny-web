@@ -57,6 +57,14 @@ export default function ProductCreateForm() {
       setError("Vui lòng chọn danh mục");
       return;
     }
+    if (!name.trim()) {
+      setError("Vui lòng nhập tên sản phẩm");
+      return;
+    }
+    if (ageMin && ageMax && Number(ageMin) > Number(ageMax)) {
+      setError("Độ tuổi tối thiểu không được lớn hơn độ tuổi tối đa");
+      return;
+    }
 
     setIsSubmitting(true);
     try {

@@ -18,6 +18,7 @@ import {
 import { getCategoryTree } from "@/features/categories/api";
 import { getAdminPurchaseBatches } from "@/features/admin/purchase-batches/api";
 import { formatCurrency } from "@/lib/utils";
+import { isValidUrl } from "@/lib/validation";
 import { AdminProductDetail } from "@/types/adminProduct";
 import { AdminPurchaseBatch } from "@/types/adminPurchaseBatch";
 import { Category } from "@/types/category";
@@ -130,6 +131,14 @@ export default function ProductEditView() {
 
   async function handleSaveInfo(e: FormEvent) {
     e.preventDefault();
+    if (!name.trim()) {
+      setError("Vui lòng nhập tên sản phẩm");
+      return;
+    }
+    if (ageMin && ageMax && Number(ageMin) > Number(ageMax)) {
+      setError("Độ tuổi tối thiểu không được lớn hơn độ tuổi tối đa");
+      return;
+    }
     setError(null);
     setIsSavingInfo(true);
     try {
@@ -168,6 +177,10 @@ export default function ProductEditView() {
 
   async function handleAddImage() {
     if (!newImageUrl.trim()) return;
+    if (!isValidUrl(newImageUrl)) {
+      setError("URL ảnh không hợp lệ");
+      return;
+    }
     setIsAddingImage(true);
     setError(null);
     try {
@@ -197,7 +210,10 @@ export default function ProductEditView() {
   }
 
   async function handleAddSpecification() {
-    if (!newSpecLabel.trim() || !newSpecValue.trim()) return;
+    if (!newSpecLabel.trim() || !newSpecValue.trim()) {
+      setError("Vui lòng nhập đủ nhãn và giá trị thông số");
+      return;
+    }
     setIsAddingSpec(true);
     setError(null);
     try {
@@ -226,9 +242,26 @@ export default function ProductEditView() {
     }
   }
 
+  // Dùng chung cho cả thêm mới và sửa biến thể
+  function validateVariant(sku: string, price: number, stockQuantity: number, compareAtPrice: string): string | null {
+    if (!sku.trim()) return "SKU không được để trống";
+    if (price <= 0) return "Giá bán phải lớn hơn 0";
+    if (stockQuantity < 0) return "Tồn kho không được âm";
+    if (compareAtPrice && Number(compareAtPrice) <= price) {
+      return "Giá gốc (trước giảm) phải lớn hơn giá bán";
+    }
+    return null;
+  }
+
   async function handleAddVariant() {
-    if (!newVariant.sku.trim()) {
-      setError("SKU không được để trống");
+    const validationError = validateVariant(
+      newVariant.sku,
+      newVariant.price,
+      newVariant.stockQuantity,
+      newVariant.compareAtPrice
+    );
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setIsAddingVariant(true);
@@ -275,6 +308,16 @@ export default function ProductEditView() {
   }
 
   async function handleSaveVariant(variantId: string) {
+    const validationError = validateVariant(
+      editingVariantData.sku,
+      editingVariantData.price,
+      editingVariantData.stockQuantity,
+      editingVariantData.compareAtPrice
+    );
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setError(null);
     try {
       await updateProductVariant(variantId, {
