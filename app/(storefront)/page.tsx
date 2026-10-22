@@ -465,6 +465,10 @@ export default async function Home() {
           <form className="flex gap-0 w-full md:w-auto max-w-sm">
             <input
               type="email"
+              name="email"
+              required
+              maxLength={254}
+              autoComplete="email"
               placeholder="Email của bạn..."
               className="flex-1 px-4 py-3 border border-white/30 bg-transparent text-sm text-white placeholder:text-white/50 outline-none transition-shadow focus:border-white focus:shadow-[0_0_0_3px_rgba(255,255,255,0.15)]"
             />

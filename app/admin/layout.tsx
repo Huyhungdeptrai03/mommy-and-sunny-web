@@ -15,11 +15,13 @@ import {
   Newspaper,
   FileText,
   MessageCircle,
+  MessagesSquare,
   Plane,
   BarChart3,
   LogOut,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import AdminSuccessToast from "@/features/admin/components/AdminSuccessToast";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -33,6 +35,7 @@ const NAV_ITEMS = [
   { href: "/admin/articles", label: "Bài viết", icon: Newspaper },
   { href: "/admin/reviews", label: "Đánh giá", icon: MessageSquareText },
   { href: "/admin/article-comments", label: "Bình luận", icon: MessageCircle },
+  { href: "/admin/chat", label: "Chat khách hàng", icon: MessagesSquare },
   { href: "/admin/policies", label: "Chính sách", icon: FileText },
   { href: "/admin/users", label: "Người dùng", icon: Users },
 ];
@@ -61,6 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--brand-cream)]">
+      <AdminSuccessToast />
       {/* Thanh trên riêng của Admin — KHÔNG dùng chung Header/TopBar của Storefront,
           vì Admin không cần giỏ hàng/tìm kiếm sản phẩm/menu danh mục khách hàng */}
       <header className="bg-[var(--brand-olive)] text-white shrink-0">

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { login } from "@/features/auth/api";
 import { useAuthStore } from "@/store/authStore";
+import { isValidEmail } from "@/lib/validation";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -21,10 +22,19 @@ export default function LoginForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Email không hợp lệ");
+      return;
+    }
+    if (!password) {
+      setError("Vui lòng nhập mật khẩu");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(normalizedEmail, password);
       setAuth(result.user, result.accessToken, result.refreshToken);
       router.push(result.user.role === "Admin" ? "/admin/dashboard" : "/");
     } catch (err) {
@@ -81,6 +91,8 @@ export default function LoginForm() {
               <input
                 type="email"
                 required
+                maxLength={254}
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputClass}
@@ -99,6 +111,7 @@ export default function LoginForm() {
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputClass}

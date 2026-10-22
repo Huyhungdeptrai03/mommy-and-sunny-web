@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
+import { notifyAdminMutationSuccess } from "@/lib/admin-notification";
 
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -27,7 +28,10 @@ let isRefreshing = false;
 let refreshQueue: Array<(newAccessToken: string) => void> = [];
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    notifyAdminMutationSuccess(response.config.url, response.config.method);
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 

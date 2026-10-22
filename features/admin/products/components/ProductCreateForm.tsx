@@ -8,6 +8,7 @@ import { createProduct } from "@/features/admin/products/api";
 import { getAdminPurchaseBatches } from "@/features/admin/purchase-batches/api";
 import { Category } from "@/types/category";
 import { AdminPurchaseBatch } from "@/types/adminPurchaseBatch";
+import { isNonNegativeInteger } from "@/lib/validation";
 
 function flattenCategories(categories: Category[], prefix = ""): { id: string; label: string }[] {
   return categories.flatMap((c) => [
@@ -61,6 +62,14 @@ export default function ProductCreateForm() {
       setError("Vui lòng nhập tên sản phẩm");
       return;
     }
+    if (name.trim().length > 200) {
+      setError("Tên sản phẩm tối đa 200 ký tự");
+      return;
+    }
+    if (!isNonNegativeInteger(ageMin) || !isNonNegativeInteger(ageMax)) {
+      setError("Độ tuổi phải là số nguyên không âm");
+      return;
+    }
     if (ageMin && ageMax && Number(ageMin) > Number(ageMax)) {
       setError("Độ tuổi tối thiểu không được lớn hơn độ tuổi tối đa");
       return;
@@ -70,9 +79,9 @@ export default function ProductCreateForm() {
     try {
       const created = await createProduct({
         categoryId,
-        name,
-        description: description || undefined,
-        brand: brand || undefined,
+        name: name.trim(),
+        description: description.trim() || undefined,
+        brand: brand.trim() || undefined,
         ageRangeMinMonths: ageMin ? Number(ageMin) : undefined,
         ageRangeMaxMonths: ageMax ? Number(ageMax) : undefined,
         purchaseBatchId: purchaseBatchId || null,
@@ -129,6 +138,7 @@ export default function ProductCreateForm() {
           </label>
           <input
             required
+            maxLength={200}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={inputClass}
@@ -141,6 +151,7 @@ export default function ProductCreateForm() {
           </label>
           <input
             value={brand}
+            maxLength={100}
             onChange={(e) => setBrand(e.target.value)}
             className={inputClass}
           />
@@ -154,6 +165,7 @@ export default function ProductCreateForm() {
             <input
               type="number"
               min={0}
+              step={1}
               placeholder="Bỏ trống nếu sản phẩm không có độ tuổi phù hợp"
               value={ageMin}
               onChange={(e) => setAgeMin(e.target.value)}
@@ -167,6 +179,7 @@ export default function ProductCreateForm() {
             <input
               type="number"
               min={0}
+              step={1}
               value={ageMax}
               onChange={(e) => setAgeMax(e.target.value)}
               className={inputClass}
@@ -201,6 +214,7 @@ export default function ProductCreateForm() {
           </label>
           <textarea
             value={description}
+            maxLength={4000}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             className={inputClass}

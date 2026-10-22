@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import {
@@ -22,11 +22,11 @@ import AddressSelector from "./AddressSelector";
 import { createOrder } from "@/features/orders/api";
 import { applyCoupon } from "@/features/checkout/couponApi";
 import { formatCurrency } from "@/lib/utils";
-import { isValidVnPhone } from "@/lib/validation";
+import { isValidFullName, isValidVnPhone } from "@/lib/validation";
 import { Cart } from "@/types/cart";
 import { Address } from "@/types/address";
 
-type PaymentMethod = "COD" | "Momo";
+import { PaymentMethod } from "@/types/order";
 
 // Vận chuyển hiện đang miễn phí toàn bộ đơn hàng ở backend (OrderService — MVP) —
 // giữ đồng bộ với thông báo ở trang Giỏ hàng, KHÔNG bịa ngưỡng "miễn phí từ X đồng"
@@ -43,7 +43,10 @@ export default function CheckoutView() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+  const [selectedPaymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+  const hasPreOrderItems = cart?.items.some((item) => item.purchaseBatchName) ?? false;
+  const paymentMethod: PaymentMethod = hasPreOrderItems ? "COD" : selectedPaymentMethod;
+  const submittingRef = useRef(false);
   const [customerNote, setCustomerNote] = useState("");
 
   const [couponInput, setCouponInput] = useState("");
@@ -120,6 +123,10 @@ export default function CheckoutView() {
       setError("Số điện thoại không hợp lệ (VD: 0912345678)");
       return;
     }
+    if (!isValidFullName(newAddress.recipientName)) {
+      setError("Họ tên người nhận phải có từ 2 đến 100 ký tự và không chứa số hoặc ký tự đặc biệt");
+      return;
+    }
 
     try {
       const created = await createAddress({ ...newAddress, isDefault: addresses.length === 0 });
@@ -136,6 +143,7 @@ export default function CheckoutView() {
   }
 
   async function handleSubmitOrder() {
+    if (submittingRef.current) return;
     setError(null);
 
     if (!selectedAddressId) {
@@ -143,6 +151,7 @@ export default function CheckoutView() {
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       const result = await createOrder({
@@ -153,14 +162,17 @@ export default function CheckoutView() {
       });
       setItemCount(0);
 
-      // Có paymentUrl (chọn thanh toán MoMo và MoMo trả về link hợp lệ) —
-      // chuyển hướng NGAY LẬP TỨC sang trang MoMo, không hiện màn hình "thành công" trung gian
-      if (result.paymentUrl) {
-        window.location.href = result.paymentUrl;
+      // Giữ mã đơn nếu trang thanh toán không mở được; không tạo lại đơn.
+      setOrderResult(result);
+      if (paymentMethod === "SePay" && result.paymentUrl) {
+        try {
+          const url = new URL(result.paymentUrl);
+          if (url.protocol === "https:") window.location.assign(url.href);
+        } catch {
+          // Keep the created order visible if redirect fails.
+        }
         return;
       }
-
-      setOrderResult(result);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
         setError(err.response.data.message);
@@ -168,6 +180,7 @@ export default function CheckoutView() {
         setError("Đã có lỗi xảy ra, vui lòng thử lại");
       }
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -251,15 +264,15 @@ export default function CheckoutView() {
             {formatCurrency(orderResult.totalAmount)}
           </span>
         </p>
-        {paymentMethod === "Momo" && !orderResult.paymentUrl && (
+        {paymentMethod === "SePay" && (
           <p className="mt-4 text-sm text-red-600 bg-red-50 p-3">
-            Đơn hàng đã được tạo, nhưng không thể kết nối tới MoMo lúc này. Vui lòng vào mục
-            &ldquo;Đơn hàng&rdquo; để thử thanh toán lại, hoặc liên hệ hỗ trợ.
+            Đơn hàng đã được tạo và đang chờ thanh toán qua SePay. Nếu trang thanh toán
+            không mở, vui lòng liên hệ hỗ trợ kèm mã đơn hàng. Không cần đặt lại đơn.
           </p>
         )}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/orders"
+            href={`/orders/${encodeURIComponent(orderResult.orderCode)}`}
             className="border border-[var(--brand-border)] text-[var(--brand-text)] text-xs font-semibold uppercase tracking-widest px-8 py-3.5 hover:border-[var(--brand-text)] transition-colors"
           >
             Xem đơn hàng
@@ -281,15 +294,6 @@ export default function CheckoutView() {
         <p className="text-[var(--brand-text-muted)]">Giỏ hàng trống, không thể đặt hàng.</p>
       </main>
     );
-  }
-
-  const hasPreOrderItems = cart.items.some((item) => item.purchaseBatchName);
-
-  // Nếu giỏ hàng có sản phẩm đặt trước mà đang lỡ chọn Momo (VD: thêm sản phẩm đặt trước
-  // vào giỏ SAU KHI đã chọn Momo ở lần trước) — tự động ép về COD, không để khách bấm
-  // đặt hàng với lựa chọn không hợp lệ (Backend cũng chặn, đây chỉ là an toàn 2 lớp)
-  if (hasPreOrderItems && paymentMethod === "Momo") {
-    setPaymentMethod("COD");
   }
 
   const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -376,6 +380,10 @@ export default function CheckoutView() {
               <div className="space-y-3 bg-[var(--brand-cream-dark)] p-5">
                 <input
                   placeholder="Họ tên người nhận"
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  autoComplete="name"
                   value={newAddress.recipientName}
                   onChange={(e) => setNewAddress((p) => ({ ...p, recipientName: e.target.value }))}
                   className={inputClass}
@@ -383,8 +391,20 @@ export default function CheckoutView() {
                 <input
                   type="tel"
                   placeholder="Số điện thoại"
+                  required
+                  minLength={10}
+                  maxLength={10}
+                  pattern="0[0-9]{9}"
+                  title="Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0"
+                  inputMode="numeric"
+                  autoComplete="tel"
                   value={newAddress.phoneNumber}
-                  onChange={(e) => setNewAddress((p) => ({ ...p, phoneNumber: e.target.value }))}
+                  onChange={(e) =>
+                    setNewAddress((p) => ({
+                      ...p,
+                      phoneNumber: e.target.value.replace(/\D/g, "").slice(0, 10),
+                    }))
+                  }
                   className={inputClass}
                 />
                 <AddressSelector
@@ -439,7 +459,7 @@ export default function CheckoutView() {
             )}
 
             <div className="space-y-3">
-              {(["COD", "Momo"] as PaymentMethod[])
+              {(["COD", "SePay"] as PaymentMethod[])
                 .filter((method) => method === "COD" || !hasPreOrderItems)
                 .map((method) => (
                   <label
@@ -463,7 +483,7 @@ export default function CheckoutView() {
                       <Wallet size={16} className="text-[var(--brand-text-muted)]" />
                     )}
                     <span className="text-[var(--brand-text)]">
-                      {method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví Momo"}
+                      {method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Chuyển khoản ngân hàng qua SePay"}
                     </span>
                   </label>
                 ))}

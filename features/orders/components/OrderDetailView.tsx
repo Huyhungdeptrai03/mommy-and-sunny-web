@@ -120,6 +120,17 @@ export default function OrderDetailView() {
         </p>
       )}
 
+      <section className="mb-6 text-sm text-[var(--brand-text)]">
+        <p>Phương thức thanh toán: {order.paymentMethod === "SePay" ? "Chuyển khoản ngân hàng qua SePay" : order.paymentMethod === "COD" ? "Thanh toán khi nhận hàng (COD)" : order.paymentMethod}</p>
+        <p>Trạng thái thanh toán: {order.paymentStatus === "Paid" ? "Đã thanh toán" : "Chưa thanh toán"}</p>
+        {order.paymentMethod === "SePay" && order.paymentStatus !== "Paid" && order.status !== "Cancelled" && (
+          <p className="mt-2 text-[var(--brand-text-muted)]">
+            Sau khi chuyển khoản, tải lại trang để kiểm tra trạng thái xác nhận từ hệ thống.
+            Nếu cần hỗ trợ, vui lòng cung cấp mã đơn hàng {order.orderCode}.
+          </p>
+        )}
+      </section>
+
       <section className="mb-6">
         <h2 className="font-heading font-semibold text-[var(--brand-text)] mb-2">
           Địa chỉ giao hàng

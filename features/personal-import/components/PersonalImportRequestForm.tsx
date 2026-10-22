@@ -5,9 +5,10 @@ import axios from "axios";
 import { X } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { createPersonalImportRequest, uploadPersonalImportImage } from "@/features/personal-import/api";
-import { isValidEmail, isValidUrl, isValidVnPhone } from "@/lib/validation";
+import { isValidEmail, isValidFullName, isValidUrl, isValidVnPhone } from "@/lib/validation";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export default function PersonalImportRequestForm() {
   const user = useAuthStore((state) => state.user);
@@ -39,6 +40,10 @@ export default function PersonalImportRequestForm() {
 
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
       setImageError("Kích thước ảnh tối đa 5MB");
+      return;
+    }
+    if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
+      setImageError("Chỉ chấp nhận ảnh JPG, PNG, WebP hoặc GIF");
       return;
     }
 
@@ -73,6 +78,10 @@ export default function PersonalImportRequestForm() {
       setError("Vui lòng nhập tên sản phẩm, tên và số điện thoại liên hệ");
       return;
     }
+    if (!isValidFullName(customerName)) {
+      setError("Họ tên phải có từ 2 đến 100 ký tự và không chứa số hoặc ký tự đặc biệt");
+      return;
+    }
     if (!isValidVnPhone(customerPhone)) {
       setError("Số điện thoại không hợp lệ (VD: 0912345678)");
       return;
@@ -83,6 +92,18 @@ export default function PersonalImportRequestForm() {
     }
     if (productLink.trim() && !isValidUrl(productLink)) {
       setError("Link sản phẩm không hợp lệ");
+      return;
+    }
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+      setError("Số lượng phải là số nguyên từ 1 đến 99");
+      return;
+    }
+    if (productName.trim().length > 200 || customerName.trim().length > 100) {
+      setError("Tên sản phẩm tối đa 200 ký tự và họ tên tối đa 100 ký tự");
+      return;
+    }
+    if (notes.trim().length > 2000) {
+      setError("Ghi chú tối đa 2000 ký tự");
       return;
     }
 
@@ -144,6 +165,8 @@ export default function PersonalImportRequestForm() {
         </label>
         <input
           value={productName}
+          required
+          maxLength={200}
           onChange={(e) => setProductName(e.target.value)}
           placeholder="VD: Sữa tắm Bübchen 400ml"
           className={inputClass}
@@ -156,6 +179,8 @@ export default function PersonalImportRequestForm() {
         </label>
         <input
           value={productLink}
+          type="url"
+          maxLength={2048}
           onChange={(e) => setProductLink(e.target.value)}
           placeholder="Dán link sản phẩm từ shop nước ngoài..."
           className={inputClass}
@@ -169,6 +194,8 @@ export default function PersonalImportRequestForm() {
         <input
           type="number"
           min={1}
+          max={99}
+          step={1}
           value={quantity}
           onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
           className={inputClass}
@@ -181,6 +208,7 @@ export default function PersonalImportRequestForm() {
         </label>
         <textarea
           value={notes}
+          maxLength={2000}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Màu sắc, dung tích, thời gian mong muốn nhận hàng..."
@@ -233,6 +261,10 @@ export default function PersonalImportRequestForm() {
           </label>
           <input
             value={customerName}
+            required
+            minLength={2}
+            maxLength={100}
+            autoComplete="name"
             onChange={(e) => setCustomerName(e.target.value)}
             className={inputClass}
           />
@@ -243,8 +275,15 @@ export default function PersonalImportRequestForm() {
           </label>
           <input
             type="tel"
+            required
+            minLength={10}
+            maxLength={10}
+            pattern="0[0-9]{9}"
+            title="Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0"
+            inputMode="numeric"
+            autoComplete="tel"
             value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
+            onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
             placeholder="VD: 0912345678"
             className={inputClass}
           />
@@ -257,6 +296,8 @@ export default function PersonalImportRequestForm() {
         </label>
         <input
           type="email"
+          maxLength={254}
+          autoComplete="email"
           value={customerEmail}
           onChange={(e) => setCustomerEmail(e.target.value)}
           className={inputClass}

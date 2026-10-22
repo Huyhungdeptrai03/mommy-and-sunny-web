@@ -1,9 +1,7 @@
 import { Phone } from "lucide-react";
 
-// Số/link mặc định khớp placeholder đang dùng ở TopBar — thay bằng số thật qua
-// biến môi trường NEXT_PUBLIC_HOTLINE / NEXT_PUBLIC_ZALO_LINK trong .env.local
-const HOTLINE = process.env.NEXT_PUBLIC_HOTLINE ?? "1900xxxx";
-const ZALO_LINK = process.env.NEXT_PUBLIC_ZALO_LINK ?? `https://zalo.me/${HOTLINE}`;
+const HOTLINE = "0898829311";
+const ZALO_LINK = `https://zalo.me/${HOTLINE}`;
 
 function ZaloIcon() {
   return (

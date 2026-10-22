@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { resetPassword } from "@/features/auth/api";
+import { isValidPassword } from "@/lib/validation";
 
 export default function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -25,6 +26,11 @@ export default function ResetPasswordForm() {
 
     if (!token) {
       setError("Thiếu mã đặt lại mật khẩu trong đường dẫn");
+      return;
+    }
+
+    if (!isValidPassword(newPassword)) {
+      setError("Mật khẩu phải có ít nhất 8 ký tự, gồm chữ và số");
       return;
     }
 
@@ -70,6 +76,8 @@ export default function ResetPasswordForm() {
                 type="password"
                 required
                 minLength={8}
+                maxLength={128}
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className={inputClass}

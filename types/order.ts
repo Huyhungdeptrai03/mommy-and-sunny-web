@@ -1,3 +1,5 @@
+export type PaymentMethod = "COD" | "SePay";
+
 export interface CreateOrderResponse {
   orderCode: string;
   totalAmount: number;

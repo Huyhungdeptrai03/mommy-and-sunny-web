@@ -104,9 +104,11 @@ export default async function Footer() {
             Liên hệ
           </p>
           <ul className="space-y-3 text-sm text-[var(--brand-text-muted)]">
-            <li className="flex items-center gap-2">
+            <li>
+              <a href="tel:0898829311" className="flex items-center gap-2 hover:text-[var(--brand-text)]">
               <Phone size={14} className="text-[var(--brand-text)] shrink-0" />
-              1900 xxxx (8:00 - 21:00)
+              0898829311 (8:00 - 21:00)
+              </a>
             </li>
             <li className="flex items-center gap-2">
               <Mail size={14} className="text-[var(--brand-text)] shrink-0" />

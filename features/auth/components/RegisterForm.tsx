@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { register } from "@/features/auth/api";
-import { isValidVnPhone } from "@/lib/validation";
+import { isValidEmail, isValidFullName, isValidPassword, isValidVnPhone } from "@/lib/validation";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -22,8 +22,24 @@ export default function RegisterForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (phoneNumber.trim() && !isValidVnPhone(phoneNumber)) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedName = fullName.trim();
+    const normalizedPhone = phoneNumber.trim();
+
+    if (!isValidFullName(normalizedName)) {
+      setError("Họ tên phải có từ 2 đến 100 ký tự và không chứa số hoặc ký tự đặc biệt");
+      return;
+    }
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Email không hợp lệ");
+      return;
+    }
+    if (normalizedPhone && !isValidVnPhone(normalizedPhone)) {
       setError("Số điện thoại không hợp lệ (VD: 0912345678)");
+      return;
+    }
+    if (!isValidPassword(password)) {
+      setError("Mật khẩu phải có ít nhất 8 ký tự, gồm chữ và số");
       return;
     }
 
@@ -31,7 +47,12 @@ export default function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      await register({ email, password, fullName, phoneNumber: phoneNumber || undefined });
+      await register({
+        email: normalizedEmail,
+        password,
+        fullName: normalizedName,
+        phoneNumber: normalizedPhone || undefined,
+      });
       setSuccessMessage(
         "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản trước khi đặt hàng. Đang chuyển đến trang đăng nhập..."
       );
@@ -100,6 +121,9 @@ export default function RegisterForm() {
               <input
                 type="text"
                 required
+                minLength={2}
+                maxLength={100}
+                autoComplete="name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className={inputClass}
@@ -113,6 +137,8 @@ export default function RegisterForm() {
               <input
                 type="email"
                 required
+                maxLength={254}
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputClass}
@@ -125,8 +151,14 @@ export default function RegisterForm() {
               </label>
               <input
                 type="tel"
+                minLength={10}
+                maxLength={10}
+                pattern="0[0-9]{9}"
+                title="Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0"
+                inputMode="numeric"
+                autoComplete="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
                 className={inputClass}
               />
             </div>
@@ -139,6 +171,8 @@ export default function RegisterForm() {
                 type="password"
                 required
                 minLength={8}
+                maxLength={128}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputClass}

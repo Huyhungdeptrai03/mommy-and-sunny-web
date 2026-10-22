@@ -3,20 +3,28 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { forgotPassword } from "@/features/auth/api";
+import { isValidEmail } from "@/lib/validation";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const inputClass =
     "w-full border border-[var(--brand-border)] px-4 py-2.5 bg-white focus:outline-none focus:border-[var(--brand-text)] transition-colors";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Email không hợp lệ");
+      return;
+    }
+    setError(null);
     setIsSubmitting(true);
     try {
-      await forgotPassword(email);
+      await forgotPassword(normalizedEmail);
     } finally {
       // Luôn hiện thông báo thành công dù email có tồn tại hay không —
       // khớp với hành vi Backend (không tiết lộ email nào đã đăng ký)
@@ -42,9 +50,16 @@ export default function ForgotPasswordForm() {
             <p className="text-sm text-[var(--brand-text-muted)]">
               Nhập email đã đăng ký, chúng tôi sẽ gửi link đặt lại mật khẩu.
             </p>
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3" aria-live="polite">
+                {error}
+              </p>
+            )}
             <input
               type="email"
               required
+              maxLength={254}
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email của bạn"

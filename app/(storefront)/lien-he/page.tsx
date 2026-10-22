@@ -9,8 +9,8 @@ const CONTACT_METHODS = [
   {
     icon: Phone,
     label: "Hotline",
-    value: "1900 xxxx",
-    href: "tel:1900xxxx",
+    value: "0898829311",
+    href: "tel:0898829311",
     note: "8:00 - 21:00, tất cả các ngày trong tuần",
   },
   {

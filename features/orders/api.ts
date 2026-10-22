@@ -1,9 +1,9 @@
 import { apiClient, ApiResponse, PagedResult } from "@/lib/api-client";
-import { CreateOrderResponse, OrderListItem, OrderDetail } from "@/types/order";
+import { CreateOrderResponse, OrderListItem, OrderDetail, PaymentMethod } from "@/types/order";
 
 export async function createOrder(payload: {
   addressId: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   couponCode?: string;
   customerNote?: string;
 }): Promise<CreateOrderResponse> {
