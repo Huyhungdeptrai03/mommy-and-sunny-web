@@ -27,6 +27,7 @@ import { Cart } from "@/types/cart";
 import { Address } from "@/types/address";
 
 import { PaymentMethod } from "@/types/order";
+import { paymentRedirectUrl } from "@/features/checkout/payment-url";
 
 // Vận chuyển hiện đang miễn phí toàn bộ đơn hàng ở backend (OrderService — MVP) —
 // giữ đồng bộ với thông báo ở trang Giỏ hàng, KHÔNG bịa ngưỡng "miễn phí từ X đồng"
@@ -78,33 +79,30 @@ export default function CheckoutView() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setIsLoading(false);
-      return;
-    }
-    void loadData();
-  }, [isAuthenticated]);
-
-  async function loadData() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [cartData, addressList] = await Promise.all([getCart(), getMyAddresses()]);
-      setCart(cartData);
-      setAddresses(addressList);
-
-      const defaultAddress = addressList.find((a) => a.isDefault) ?? addressList[0];
-      if (defaultAddress) {
-        setSelectedAddressId(defaultAddress.id);
-      } else {
-        setShowAddressForm(true);
+    let active = true;
+    async function loadData() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [cartData, addressList] = await Promise.all([getCart(), getMyAddresses()]);
+        if (!active) return;
+        setCart(cartData);
+        setAddresses(addressList);
+        const defaultAddress = addressList.find((a) => a.isDefault) ?? addressList[0];
+        if (defaultAddress) setSelectedAddressId(defaultAddress.id);
+        else setShowAddressForm(true);
+      } catch {
+        if (active) setError("Không thể tải dữ liệu, vui lòng thử lại");
+      } finally {
+        if (active) setIsLoading(false);
       }
-    } catch {
-      setError("Không thể tải dữ liệu, vui lòng thử lại");
-    } finally {
-      setIsLoading(false);
     }
-  }
+    const timer = setTimeout(() => {
+      if (isAuthenticated) void loadData();
+      else setIsLoading(false);
+    }, 0);
+    return () => { active = false; clearTimeout(timer); };
+  }, [isAuthenticated]);
 
   async function handleCreateAddress() {
     setError(null);
@@ -165,12 +163,8 @@ export default function CheckoutView() {
       // Giữ mã đơn nếu trang thanh toán không mở được; không tạo lại đơn.
       setOrderResult(result);
       if (paymentMethod === "SePay" && result.paymentUrl) {
-        try {
-          const url = new URL(result.paymentUrl);
-          if (url.protocol === "https:") window.location.assign(url.href);
-        } catch {
-          // Keep the created order visible if redirect fails.
-        }
+        const paymentUrl = paymentRedirectUrl(result.paymentUrl);
+        if (paymentUrl) window.location.assign(paymentUrl);
         return;
       }
     } catch (err) {

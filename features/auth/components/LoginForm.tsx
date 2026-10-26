@@ -4,12 +4,15 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { login } from "@/features/auth/api";
+import { authErrorMessage } from "@/features/auth/session";
+import { safeDestination } from "@/features/auth/safety";
+import SocialLoginButtons from "./SocialLoginButtons";
 import { useAuthStore } from "@/store/authStore";
 import { isValidEmail } from "@/lib/validation";
 
 export default function LoginForm() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.login);
+  const checking = useAuthStore((state) => state.status === "checking" && !state.notice);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,11 +38,11 @@ export default function LoginForm() {
 
     try {
       const result = await login(normalizedEmail, password);
-      setAuth(result.user, result.accessToken, result.refreshToken);
-      router.push(result.user.role === "Admin" ? "/admin/dashboard" : "/");
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+      router.replace(safeDestination(returnTo, result.user.role === "Admin" ? "/admin/dashboard" : "/account"));
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
-        setError(err.response.data.message);
+        setError(authErrorMessage(err));
       } else {
         setError("Đã có lỗi xảy ra, vui lòng thử lại");
       }
@@ -120,12 +123,13 @@ export default function LoginForm() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || checking}
               className="w-full bg-[var(--brand-olive)] text-white py-3.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50"
             >
               {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
 
+            <SocialLoginButtons />
             <p className="text-sm text-center text-[var(--brand-text-muted)]">
               Chưa có tài khoản?{" "}
               <a href="/register" className="text-[var(--brand-text)] font-medium underline">

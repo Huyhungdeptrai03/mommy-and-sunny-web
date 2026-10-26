@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import AdminSuccessToast from "@/features/admin/components/AdminSuccessToast";
+import { signOut } from "@/features/auth/session";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -43,20 +44,15 @@ const NAV_ITEMS = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const { user, isAuthenticated, status } = useAuthStore();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (mounted && (!isAuthenticated || user?.role !== "Admin")) {
-      router.push("/");
+    if (status !== "checking" && (!isAuthenticated || user?.role !== "Admin")) {
+      router.replace("/");
     }
-  }, [mounted, isAuthenticated, user, router]);
+  }, [status, isAuthenticated, user, router]);
 
-  if (!mounted || !isAuthenticated || user?.role !== "Admin") {
+  if (status === "checking" || !isAuthenticated || user?.role !== "Admin") {
     return (
       <main className="p-8 text-[var(--brand-text-muted)]">Đang kiểm tra quyền truy cập...</main>
     );
@@ -80,8 +76,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-white/70">{user?.fullName}</span>
             <button
               onClick={() => {
-                logout();
-                router.push("/login");
+                void signOut().catch(() => undefined);
+                router.replace("/login");
               }}
               className="flex items-center gap-1.5 hover:underline"
             >

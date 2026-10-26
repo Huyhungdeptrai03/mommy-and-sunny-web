@@ -8,21 +8,20 @@ import { verifyEmail } from "@/features/auth/api";
 
 export default function VerifyEmailView() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const [token] = useState(() => searchParams.get("token"));
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setError("Thiếu mã xác thực trong đường dẫn");
-      return;
-    }
+    if (!token) return;
+    window.history.replaceState(null, "", "/verify-email");
+    let active = true;
 
     verifyEmail(token)
-      .then(() => setStatus("success"))
+      .then(() => { if (active) setStatus("success"); })
       .catch((err) => {
+        if (!active) return;
         setStatus("error");
         if (axios.isAxiosError(err) && err.response?.data?.message) {
           setError(err.response.data.message);
@@ -30,7 +29,10 @@ export default function VerifyEmailView() {
           setError("Không thể xác thực email, vui lòng thử lại");
         }
       });
+    return () => { active = false; };
   }, [token]);
+
+  if (!token) return <main className="p-12 text-center">Thiếu mã xác thực trong đường dẫn. <Link href="/account" className="underline">Tài khoản</Link></main>;
 
   return (
     <main className="min-h-[60vh] flex items-center justify-center px-6">

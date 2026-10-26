@@ -25,9 +25,11 @@ export default function ForgotPasswordForm() {
     setIsSubmitting(true);
     try {
       await forgotPassword(normalizedEmail);
+    } catch {
+      // Keep the same public response without leaking account existence or
+      // leaving an unhandled rejected promise in the form event handler.
     } finally {
-      // Luôn hiện thông báo thành công dù email có tồn tại hay không —
-      // khớp với hành vi Backend (không tiết lộ email nào đã đăng ký)
+      // Thông báo chung phía UI; hành vi backend cần được xác minh riêng.
       setSubmitted(true);
       setIsSubmitting(false);
     }

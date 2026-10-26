@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ViewTransition } from "react";
 import { Geist_Mono, Montserrat, Inter } from "next/font/google";
 import "./globals.css";
+import AuthSessionProvider from "@/components/auth/AuthSessionProvider";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -46,7 +47,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[var(--brand-cream)] text-[var(--brand-text)]">
         {/* Chuyển trang mượt mà (crossfade) qua View Transitions API của trình duyệt —
             tự kích hoạt mỗi lần điều hướng route trong App Router, không cần code thêm */}
-        <ViewTransition default="auto">{children}</ViewTransition>
+        <AuthSessionProvider><ViewTransition default="auto">{children}</ViewTransition></AuthSessionProvider>
       </body>
     </html>
   );

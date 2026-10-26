@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ShoppingCart, Heart, User, ChevronDown, Menu, X, Plane } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { signOut } from "@/features/auth/session";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { getMyWishlist } from "@/features/wishlist/api";
@@ -19,8 +20,8 @@ const SUGGESTION_DEBOUNCE_MS = 300;
 
 export default function Header() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, status } = useAuthStore();
+  const mounted = status !== "checking";
   const itemCount = useCartStore((state) => state.itemCount);
   const wishlistCount = useWishlistStore((state) => state.productIds.size);
   const setWishlistIds = useWishlistStore((state) => state.setProductIds);
@@ -42,7 +43,6 @@ export default function Header() {
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     void getCategoryTree()
       .then(setCategories)
       .catch(() => {
@@ -81,14 +81,16 @@ export default function Header() {
   useEffect(() => {
     const term = searchQuery.trim();
     if (term.length < SUGGESTION_MIN_CHARS) {
-      setSuggestions([]);
-      setIsSuggestLoading(false);
-      return;
+      const reset = setTimeout(() => {
+        setSuggestions([]);
+        setIsSuggestLoading(false);
+      }, 0);
+      return () => clearTimeout(reset);
     }
 
     let cancelled = false;
-    setIsSuggestLoading(true);
     const timer = setTimeout(() => {
+      setIsSuggestLoading(true);
       void getProducts({ search: term, pageSize: 5 })
         .then((result) => {
           if (cancelled) return;
@@ -344,14 +346,14 @@ export default function Header() {
                     Xin chào, {user?.fullName}
                   </p>
                   <Link
-                    href="/orders"
+                    href="/account"
                     onClick={() => {
                       setUserMenuOpen(false);
                       closeMobileMenu();
                     }}
                     className="block px-3 py-2 hover:bg-[var(--brand-cream-dark)] text-[var(--brand-text)]"
                   >
-                    Đơn hàng
+                    Tài khoản của tôi
                   </Link>
                   <Link
                     href="/wishlist"
@@ -365,7 +367,7 @@ export default function Header() {
                   </Link>
                   <button
                     onClick={() => {
-                      logout();
+                      void signOut().catch(() => undefined);
                       setUserMenuOpen(false);
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600"

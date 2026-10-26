@@ -1,0 +1,68 @@
+# TEMPLATE ONLY. No production resources or automatic migration.
+name: ${STAGING_PROJECT:?Set a unique isolated staging project}
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?Set reviewed PostgreSQL image}
+    env_file: ./secrets/postgres.env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [private]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: [no-new-privileges:true]
+  api:
+    image: ${API_IMAGE:?Set locally reviewed API image}
+    env_file: ./secrets/api.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_HTTP_PORTS: '8080'
+      Frontend__BaseUrl: ${STAGING_ORIGIN:?Set verified HTTPS origin, default port 443}
+      ReverseProxy__KnownProxies: ${STAGING_PROXY_IP:?Set proxy IP within isolated subnet}
+      Authentication__DataProtectionKeysPath: /app/keys
+      Database__ApplyMigrationsOnStartup: 'false'
+      SePay__UseMock: 'false'
+    volumes:
+      - auth-keys:/app/keys
+      - uploads:/app/wwwroot/uploads
+    networks: [private]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  web:
+    image: ${WEB_IMAGE:?Set locally reviewed Next standalone image}
+    environment:
+      API_INTERNAL_URL: ${STAGING_ORIGIN:?Set verified HTTPS origin}/api
+    networks: [private]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  proxy:
+    image: ${NGINX_IMAGE:?Set reviewed nginx image}
+    environment:
+      STAGING_HOST: ${STAGING_HOST:?Set host only, no port or scheme}
+      NGINX_ENVSUBST_FILTER: '^STAGING_HOST'
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./secrets/tls.crt:/etc/nginx/tls/tls.crt:ro
+      - ./secrets/tls.key:/etc/nginx/tls/tls.key:ro
+    # Safe default: accessible only via local tunnel. Public exposure is a separate manual review.
+    ports: ['127.0.0.1:443:443']
+    networks:
+      private:
+        ipv4_address: ${STAGING_PROXY_IP:?Set isolated proxy IP}
+        aliases: ['${STAGING_HOST:?Set actual staging host}']
+    depends_on: [api, web]
+    security_opt: [no-new-privileges:true]
+networks:
+  private:
+    ipam:
+      config:
+        - subnet: ${STAGING_SUBNET:?Select unused private subnet}
+volumes:
+  postgres-data:
+  auth-keys:
+  uploads:

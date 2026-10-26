@@ -4,7 +4,9 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { register } from "@/features/auth/api";
-import { isValidEmail, isValidFullName, isValidPassword, isValidVnPhone } from "@/lib/validation";
+import { isValidEmail, isValidFullName, isValidVnPhone } from "@/lib/validation";
+import { validMemberPassword } from "@/features/auth/safety";
+import SocialLoginButtons from "./SocialLoginButtons";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -38,8 +40,8 @@ export default function RegisterForm() {
       setError("Số điện thoại không hợp lệ (VD: 0912345678)");
       return;
     }
-    if (!isValidPassword(password)) {
-      setError("Mật khẩu phải có ít nhất 8 ký tự, gồm chữ và số");
+    if (!validMemberPassword(password)) {
+      setError("Mật khẩu phải có ít nhất 8 ký tự và tối đa 72 byte UTF-8.");
       return;
     }
 
@@ -187,6 +189,7 @@ export default function RegisterForm() {
               {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
             </button>
 
+            <SocialLoginButtons />
             <p className="text-sm text-center text-[var(--brand-text-muted)]">
               Đã có tài khoản?{" "}
               <a href="/login" className="text-[var(--brand-text)] font-medium underline">

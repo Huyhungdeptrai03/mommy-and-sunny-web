@@ -1,5 +1,17 @@
 import { apiClient, ApiResponse } from "@/lib/api-client";
 import { Address } from "@/types/address";
+import type { AuthUser } from "@/types/auth";
+
+export async function getProfile(): Promise<AuthUser> {
+  const res = await apiClient.get<ApiResponse<AuthUser>>("/account/me");
+  return res.data.data;
+}
+export async function updateProfile(payload: { fullName: string; phoneNumber: string | null }): Promise<AuthUser> {
+  const res = await apiClient.patch<ApiResponse<AuthUser>>("/account/me", {
+    fullName: payload.fullName, phoneNumber: payload.phoneNumber,
+  });
+  return res.data.data;
+}
 
 export async function getMyAddresses(): Promise<Address[]> {
   const res = await apiClient.get<ApiResponse<Address[]>>("/account/addresses");

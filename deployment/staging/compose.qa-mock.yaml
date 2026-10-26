@@ -1,0 +1,7 @@
+# Use ONLY for a separate QA project, subnet, origin, credentials and volumes.
+# Never apply this override to real Staging/Production.
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      SePay__UseMock: 'true'

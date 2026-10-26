@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { resetPassword } from "@/features/auth/api";
-import { isValidPassword } from "@/lib/validation";
+import { validMemberPassword } from "@/features/auth/safety";
 
 export default function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
+  const [token] = useState(() => searchParams.get("token"));
+  useEffect(() => {
+    window.history.replaceState(null, "", "/reset-password");
+  }, []);
 
   const [newPassword, setNewPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,8 +32,8 @@ export default function ResetPasswordForm() {
       return;
     }
 
-    if (!isValidPassword(newPassword)) {
-      setError("Mật khẩu phải có ít nhất 8 ký tự, gồm chữ và số");
+    if (!validMemberPassword(newPassword)) {
+      setError("Mật khẩu phải có ít nhất 8 ký tự và tối đa 72 byte UTF-8.");
       return;
     }
 
