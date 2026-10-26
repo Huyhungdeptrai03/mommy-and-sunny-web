@@ -333,15 +333,18 @@ export default function Header() {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
+                aria-label={`Tài khoản của ${user?.fullName ?? "bạn"}`}
+                aria-expanded={userMenuOpen}
+                aria-controls="header-member-menu"
                 className="flex items-center gap-2 text-[var(--brand-text)] hover:text-[var(--brand-accent)] transition-colors"
               >
                 <User size={19} />
-                <span className="hidden sm:inline text-xs font-medium uppercase tracking-wide">
+                <span className="hidden max-w-28 truncate sm:inline text-xs font-medium uppercase tracking-wide">
                   {displayName}
                 </span>
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-3 bg-white border border-[var(--brand-border)] shadow-lg p-2 min-w-[190px] text-sm">
+                <div id="header-member-menu" className="absolute right-0 top-full mt-3 w-64 max-w-[calc(100vw-2rem)] bg-white border border-[var(--brand-border)] shadow-lg p-2 text-sm">
                   <p className="px-3 py-1.5 text-[var(--brand-text-muted)] truncate text-xs">
                     Xin chào, {user?.fullName}
                   </p>
@@ -354,6 +357,10 @@ export default function Header() {
                     className="block px-3 py-2 hover:bg-[var(--brand-cream-dark)] text-[var(--brand-text)]"
                   >
                     Tài khoản của tôi
+                  </Link>
+                  <Link href="/orders" onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
+                    className="block px-3 py-2 hover:bg-[var(--brand-cream-dark)] text-[var(--brand-text)]">
+                    Lịch sử đơn hàng
                   </Link>
                   <Link
                     href="/wishlist"
@@ -381,6 +388,7 @@ export default function Header() {
             <div className="relative group">
               <Link
                 href="/login"
+                aria-label="Đăng nhập tài khoản"
                 onClick={closeMobileMenu}
                 className="flex items-center gap-2 text-[var(--brand-text)] hover:text-[var(--brand-accent)] transition-colors"
               >

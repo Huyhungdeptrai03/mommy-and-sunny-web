@@ -1,18 +1,19 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import axios from "axios";
 import { register } from "@/features/auth/api";
 import { isValidEmail, isValidFullName, isValidVnPhone } from "@/lib/validation";
 import { validMemberPassword } from "@/features/auth/safety";
 import SocialLoginButtons from "./SocialLoginButtons";
+import PasswordInput from "./PasswordInput";
+import { authErrorCode, authErrorMessage } from "@/features/auth/session";
 
 export default function RegisterForm() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function RegisterForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (isSubmitting || successMessage) return;
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedName = fullName.trim();
     const normalizedPhone = phoneNumber.trim();
@@ -44,6 +46,10 @@ export default function RegisterForm() {
       setError("Mật khẩu phải có ít nhất 8 ký tự và tối đa 72 byte UTF-8.");
       return;
     }
+    if (password !== confirmation) {
+      setError("Mật khẩu xác nhận chưa khớp. Vui lòng nhập lại.");
+      return;
+    }
 
     setError(null);
     setIsSubmitting(true);
@@ -56,13 +62,16 @@ export default function RegisterForm() {
         phoneNumber: normalizedPhone || undefined,
       });
       setSuccessMessage(
-        "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản trước khi đặt hàng. Đang chuyển đến trang đăng nhập..."
+        "Đăng ký thành công! Hãy mở email xác minh tài khoản (kiểm tra cả thư rác) trước khi đặt hàng. Sau đó đăng nhập để quản lý tài khoản và đơn hàng."
       );
-      setTimeout(() => router.push("/login"), 1500);
+      setPassword("");
+      setConfirmation("");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const data = err.response?.data;
-        if (data?.errors) {
+        if (authErrorCode(err)) {
+          setError(authErrorMessage(err));
+        } else if (data?.errors) {
           const firstFieldErrors = Object.values(data.errors)[0] as string[] | undefined;
           setError(firstFieldErrors?.[0] ?? data.message);
         } else {
@@ -77,7 +86,7 @@ export default function RegisterForm() {
   }
 
   return (
-    <main className="min-h-[85vh] flex items-center justify-center px-6 py-12 bg-[var(--brand-cream)]">
+    <main className="min-h-[85vh] flex items-center justify-center px-4 py-8 sm:px-6 sm:py-12 bg-[var(--brand-cream)]">
       <div className="w-full max-w-4xl bg-white border border-[var(--brand-border)] overflow-hidden grid md:grid-cols-2">
         {/* Panel trái — mực đen, tinh thần boutique cao cấp */}
         <div className="hidden md:flex flex-col justify-center bg-[var(--brand-olive)] text-white p-12">
@@ -94,8 +103,8 @@ export default function RegisterForm() {
         </div>
 
         {/* Form */}
-        <div className="flex items-center justify-center p-8 md:p-12">
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        <div className="flex min-w-0 items-center justify-center p-5 sm:p-8 md:p-10">
+          <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="w-full max-w-sm space-y-4">
             <div className="mb-2">
               <h1 className="font-heading text-2xl font-extrabold uppercase tracking-tight text-[var(--brand-text)]">
                 Đăng ký
@@ -106,21 +115,25 @@ export default function RegisterForm() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3">
+              <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 p-3">
                 {error}
               </p>
             )}
             {successMessage && (
-              <p className="text-sm text-green-700 bg-green-50 border border-green-200 p-3">
-                {successMessage}
-              </p>
+              <div role="status" className="space-y-2 text-sm text-green-800 bg-green-50 border border-green-200 p-3">
+                <p>{successMessage}</p>
+                <Link href="/login" className="inline-block font-semibold underline">Đến trang đăng nhập</Link>
+              </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
+              <label htmlFor="register-name" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
                 Họ tên
               </label>
               <input
+                id="register-name"
+                name="fullName"
+                disabled={isSubmitting || !!successMessage}
                 type="text"
                 required
                 minLength={2}
@@ -133,10 +146,13 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
+              <label htmlFor="register-email" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
                 Email
               </label>
               <input
+                id="register-email"
+                name="email"
+                disabled={isSubmitting || !!successMessage}
                 type="email"
                 required
                 maxLength={254}
@@ -148,10 +164,13 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
+              <label htmlFor="register-phone" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
                 Số điện thoại (không bắt buộc)
               </label>
               <input
+                id="register-phone"
+                name="phoneNumber"
+                disabled={isSubmitting || !!successMessage}
                 type="tel"
                 minLength={10}
                 maxLength={10}
@@ -166,11 +185,14 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
+              <label htmlFor="register-password" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
                 Mật khẩu
               </label>
-              <input
-                type="password"
+              <PasswordInput
+                id="register-password"
+                name="password"
+                aria-describedby="register-password-hint"
+                disabled={isSubmitting || !!successMessage}
                 required
                 minLength={8}
                 maxLength={128}
@@ -179,22 +201,32 @@ export default function RegisterForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputClass}
               />
+              <p id="register-password-hint" className="mt-2 text-xs leading-relaxed text-[var(--brand-text-muted)]">Ít nhất 8 ký tự, tối đa 72 byte UTF-8. Ký tự có dấu có thể chiếm nhiều byte.</p>
             </div>
+
+            <div>
+              <label htmlFor="register-confirmation" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">Xác nhận mật khẩu</label>
+              <PasswordInput id="register-confirmation" name="passwordConfirmation" required
+                autoComplete="new-password" maxLength={128} disabled={isSubmitting || !!successMessage}
+                value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={inputClass} />
+            </div>
+
+            {!successMessage && <p className="text-xs leading-relaxed text-[var(--brand-text-muted)]">Chúng tôi sẽ gửi email xác minh sau khi bạn đăng ký. Tài khoản Google/Facebook mới cũng cần hoàn tất xác minh email.</p>}
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!successMessage}
               className="w-full bg-[var(--brand-olive)] text-white py-3.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
+              {isSubmitting ? "Đang đăng ký..." : successMessage ? "Đã đăng ký" : "Tạo tài khoản"}
             </button>
 
-            <SocialLoginButtons />
+            <SocialLoginButtons registering disabled={isSubmitting || !!successMessage} />
             <p className="text-sm text-center text-[var(--brand-text-muted)]">
               Đã có tài khoản?{" "}
-              <a href="/login" className="text-[var(--brand-text)] font-medium underline">
+              <Link href="/login" className="text-[var(--brand-text)] font-medium underline">
                 Đăng nhập
-              </a>
+              </Link>
             </p>
           </form>
         </div>

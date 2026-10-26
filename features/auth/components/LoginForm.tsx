@@ -2,11 +2,12 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import Link from "next/link";
 import { login } from "@/features/auth/api";
 import { authErrorMessage } from "@/features/auth/session";
 import { safeDestination } from "@/features/auth/safety";
 import SocialLoginButtons from "./SocialLoginButtons";
+import PasswordInput from "./PasswordInput";
 import { useAuthStore } from "@/store/authStore";
 import { isValidEmail } from "@/lib/validation";
 
@@ -24,6 +25,7 @@ export default function LoginForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (isSubmitting || checking) return;
     setError(null);
     const normalizedEmail = email.trim().toLowerCase();
     if (!isValidEmail(normalizedEmail)) {
@@ -41,18 +43,14 @@ export default function LoginForm() {
       const returnTo = new URLSearchParams(window.location.search).get("returnTo");
       router.replace(safeDestination(returnTo, result.user.role === "Admin" ? "/admin/dashboard" : "/account"));
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.message) {
-        setError(authErrorMessage(err));
-      } else {
-        setError("Đã có lỗi xảy ra, vui lòng thử lại");
-      }
+      setError(authErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <main className="min-h-[85vh] flex items-center justify-center px-6 py-12 bg-[var(--brand-cream)]">
+    <main className="min-h-[85vh] flex items-center justify-center px-4 py-8 sm:px-6 sm:py-12 bg-[var(--brand-cream)]">
       <div className="w-full max-w-4xl bg-white border border-[var(--brand-border)] overflow-hidden grid md:grid-cols-2">
         {/* Panel trái — mực đen, tinh thần boutique cao cấp */}
         <div className="hidden md:flex flex-col justify-center bg-[var(--brand-olive)] text-white p-12">
@@ -70,8 +68,8 @@ export default function LoginForm() {
         </div>
 
         {/* Form */}
-        <div className="flex items-center justify-center p-8 md:p-12">
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        <div className="flex min-w-0 items-center justify-center p-5 sm:p-8 md:p-10">
+          <form onSubmit={handleSubmit} aria-busy={isSubmitting || checking} className="w-full max-w-sm space-y-4">
             <div className="mb-2">
               <h1 className="font-heading text-2xl font-extrabold uppercase tracking-tight text-[var(--brand-text)]">
                 Đăng nhập
@@ -82,16 +80,19 @@ export default function LoginForm() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3">
+              <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 p-3">
                 {error}
               </p>
             )}
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
+              <label htmlFor="login-email" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)] mb-1.5">
                 Email
               </label>
               <input
+                id="login-email"
+                name="email"
+                disabled={isSubmitting}
                 type="email"
                 required
                 maxLength={254}
@@ -104,15 +105,17 @@ export default function LoginForm() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)]">
+                <label htmlFor="login-password" className="block text-xs font-medium uppercase tracking-wide text-[var(--brand-text-muted)]">
                   Mật khẩu
                 </label>
-                <a href="/forgot-password" className="text-xs text-[var(--brand-text)] underline">
+                <Link href="/forgot-password" className="text-xs text-[var(--brand-text)] underline">
                   Quên mật khẩu?
-                </a>
+                </Link>
               </div>
-              <input
-                type="password"
+              <PasswordInput
+                id="login-password"
+                name="password"
+                disabled={isSubmitting}
                 required
                 autoComplete="current-password"
                 value={password}
@@ -126,15 +129,15 @@ export default function LoginForm() {
               disabled={isSubmitting || checking}
               className="w-full bg-[var(--brand-olive)] text-white py-3.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+              {isSubmitting ? "Đang đăng nhập..." : checking ? "Đang kiểm tra phiên..." : "Đăng nhập"}
             </button>
 
-            <SocialLoginButtons />
+            <SocialLoginButtons disabled={isSubmitting} />
             <p className="text-sm text-center text-[var(--brand-text-muted)]">
               Chưa có tài khoản?{" "}
-              <a href="/register" className="text-[var(--brand-text)] font-medium underline">
+              <Link href="/register" className="text-[var(--brand-text)] font-medium underline">
                 Đăng ký
-              </a>
+              </Link>
             </p>
           </form>
         </div>
