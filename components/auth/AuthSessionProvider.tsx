@@ -4,10 +4,10 @@ import { Fragment, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
-import { initializeSession, revalidateSession, signOut } from "@/features/auth/session";
+import { initializeSession, revalidateSession, signOut, SESSION_UNSUPPORTED_MESSAGE } from "@/features/auth/session";
 
 export default function AuthSessionProvider({ children }: { children: React.ReactNode }) {
-  const { status, generation, notice, retryAt, recoveryRequiresLogin } = useAuthStore();
+  const { status, generation, notice, retryAt, recoveryRequiresLogin, sessionUnsupported } = useAuthStore();
   const pathname = usePathname();
   useEffect(() => {
     void initializeSession();
@@ -38,6 +38,10 @@ export default function AuthSessionProvider({ children }: { children: React.Reac
     <button type="button" className="underline" onClick={() => void signOut().catch(() => undefined)}>Đăng xuất trên máy chủ</button>
   </div>;
   const privatePage = /^\/(?:admin|account|cart|checkout|orders|wishlist)(?:\/|$)/.test(pathname);
+  if (sessionUnsupported && privatePage) {
+    return <main className="p-12 text-center"><p role="alert">{SESSION_UNSUPPORTED_MESSAGE}</p>
+      <Link className="underline" href="/">Tiếp tục xem sản phẩm</Link></main>;
+  }
   if (status === "checking" && privatePage) return <>{sessionNotice}<main className="p-12 text-center" aria-busy={!notice}>Đang kiểm tra phiên đăng nhập...</main></>;
   return <>
     {sessionNotice}

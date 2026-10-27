@@ -1,6 +1,6 @@
-﻿import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { notifyAdminMutationSuccess } from "@/lib/admin-notification";
-import { ensureAccessToken, invalidateSession, isCurrentSession, sessionGeneration, authErrorCode } from "@/features/auth/session";
+import { ensureAccessToken, invalidateSession, isCurrentSession, sessionGeneration, authErrorCode, isSessionUnsupported } from "@/features/auth/session";
 
 export const apiClient = axios.create({
   // Public server-rendered catalog requests need an absolute backend URL.
@@ -33,8 +33,10 @@ apiClient.interceptors.request.use(async (config: SessionRequest) => {
   if (typeof window !== "undefined" && !isAuthRequest(config)) {
     const generation = sessionGeneration();
     const token = await ensureAccessToken();
-    if (!isCurrentSession(generation)) throw new axios.CanceledError("Authentication session changed");
-    if (token) {
+    // Missing session support clears identity during the first public request.
+    // Continue anonymously; responses tied to a previous identity still fail assertCurrent.
+    if (!isCurrentSession(generation) && !isSessionUnsupported()) throw new axios.CanceledError("Authentication session changed");
+    if (token && !isSessionUnsupported()) {
       config._authGeneration = generation;
       config.headers.Authorization = `Bearer ${token}`;
     } else config.headers.delete("Authorization");

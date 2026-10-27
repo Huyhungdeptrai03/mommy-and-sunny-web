@@ -26,7 +26,32 @@ let validationFlight: Promise<void> | null = null;
 const VALIDATION_INTERVAL = 60000;
 
 class SessionRecoveryError extends Error {
-  constructor(readonly code: "AUTH_RETRY_LATER" | "AUTH_REAUTHENTICATION_REQUIRED") { super(code); }
+  constructor(readonly code: "AUTH_RETRY_LATER" | "AUTH_REAUTHENTICATION_REQUIRED" | "AUTH_SESSION_UNSUPPORTED") { super(code); }
+}
+
+// A missing session endpoint is latched only for this page lifetime. Reloading
+// probes the contract again after a backend upgrade; no browser flag is persisted.
+export const SESSION_UNSUPPORTED_MESSAGE = "Đăng nhập và các tính năng tài khoản hiện chưa khả dụng do máy chủ chưa hỗ trợ phiên đăng nhập mới. Bạn vẫn có thể xem và tìm kiếm sản phẩm. Vui lòng thử lại sau.";
+export function isSessionUnsupported() { return useAuthStore.getState().sessionUnsupported; }
+export function assertSessionSupported() {
+  if (isSessionUnsupported()) throw new SessionRecoveryError("AUTH_SESSION_UNSUPPORTED");
+}
+async function sessionEndpoint<T>(path: string, request: () => Promise<T>): Promise<T> {
+  assertSessionSupported();
+  const expected = epoch;
+  try { return await request(); }
+  catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404 &&
+        ["/auth/csrf", "/auth/me", "/auth/refresh-token"].includes(path)) {
+      assertEpoch(expected);
+      anonymousCsrf = null;
+      retryAt = 0;
+      clearSession();
+      useAuthStore.setState({ sessionUnsupported: true });
+      throw new SessionRecoveryError("AUTH_SESSION_UNSUPPORTED");
+    }
+    throw error;
+  }
 }
 
 export function sessionGeneration() { return epoch; }
@@ -37,6 +62,7 @@ export function authErrorCode(error: unknown): string | undefined {
 }
 export function authErrorMessage(error: unknown): string {
   const messages: Record<string, string> = {
+    AUTH_SESSION_UNSUPPORTED: SESSION_UNSUPPORTED_MESSAGE,
     INVALID_CREDENTIALS: "Email hoặc mật khẩu không đúng.",
     SESSION_EXPIRED: "Phiên đã hết hạn. Vui lòng đăng nhập lại.",
     SESSION_REVOKED: "Phiên đã bị thu hồi. Vui lòng đăng nhập lại.",
@@ -89,9 +115,10 @@ async function csrf(bearer?: string): Promise<string> {
   // The refresh cookie never authenticates this request: anonymous principal is
   // stable across rotations. Never reuse this request token for a Bearer link.
   if (!bearer && anonymousCsrf) return anonymousCsrf;
-  const response = await transport.get("/auth/csrf", {
+  assertSessionSupported();
+  const response = await sessionEndpoint("/auth/csrf", () => transport.get("/auth/csrf", {
     headers: bearer ? { Authorization: `Bearer ${bearer}` } : {},
-  });
+  }));
   const value = response.data?.data?.csrfToken;
   if (typeof value !== "string" || !value) throw new Error("Invalid CSRF response");
   if (!bearer) anonymousCsrf = value;
@@ -101,10 +128,10 @@ async function cookiePost<T>(path: string, body?: unknown, bearer?: string, send
   const token = await csrf(bearer);
   try {
     sending?.();
-    const response = await transport.post(path, body, { headers: {
+    const response = await sessionEndpoint(path, () => transport.post(path, body, { headers: {
       "X-CSRF-TOKEN": token,
       ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    } });
+    } }));
     return response.data.data as T;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 403) anonymousCsrf = null;
@@ -126,7 +153,7 @@ function accept(result: AuthResponse, expected: number) {
   return accessToken;
 }
 async function loadMember(token: string, expected: number) {
-  const response = await transport.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+  const response = await sessionEndpoint("/auth/me", () => transport.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } }));
   assertEpoch(expected);
   const user = response.data.data as AuthUser;
   if (!user?.id || user.id !== useAuthStore.getState().user?.id) throw new Error("Invalid member response");
@@ -159,6 +186,7 @@ function pauseRecovery(error: unknown, postStarted = false) {
 }
 
 export function refreshSession(): Promise<string> {
+  if (isSessionUnsupported()) return Promise.reject(new SessionRecoveryError("AUTH_SESSION_UNSUPPORTED"));
   const expected = epoch;
   if (flight?.epoch === expected) return flight.promise;
   let postStarted = false;
@@ -184,10 +212,12 @@ export function refreshSession(): Promise<string> {
   return promise;
 }
 export async function ensureAccessToken(force = false): Promise<string | null> {
+  if (isSessionUnsupported()) return null;
   if (!force && accessToken && expiresAt > Date.now() + 30000) return accessToken;
   if (useAuthStore.getState().status === "anonymous" && !force) return null;
   try { return await refreshSession(); }
   catch (error) {
+    if (isSessionUnsupported()) return null;
     // A still-valid JWT can be used through temporary recovery failures. An
     // expired token is never sent to a mutation as a fallback.
     if (!force && accessToken && expiresAt > Date.now() && !definitiveFailure(error)) return accessToken;
@@ -258,6 +288,7 @@ export function initializeSession(): Promise<void> {
     if (typeof BroadcastChannel !== "undefined") {
       channel = new BroadcastChannel("mommy-and-sunny-auth-events");
       channel.onmessage = (event) => {
+        if (isSessionUnsupported()) return;
         if (event.data?.type === "logout") clearSession();
         if (event.data?.type === "backoff" && Number.isFinite(event.data.retryAt)) {
           retryAt = Math.max(retryAt, event.data.retryAt);

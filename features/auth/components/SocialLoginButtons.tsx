@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import type { ExternalProvider } from "@/types/auth";
+import { assertSessionSupported, authErrorMessage } from "@/features/auth/session";
 import { safeDestination } from "@/features/auth/safety";
 import { useAuthStore } from "@/store/authStore";
 
@@ -22,13 +23,18 @@ export default function SocialLoginButtons({ linking = false, registering = fals
     setError(null);
     setPending(provider);
     try {
+      assertSessionSupported();
       const params = new URLSearchParams(window.location.search);
       sessionStorage.setItem("member-auth-destination", safeDestination(params.get("returnTo")));
       sessionStorage.setItem("member-auth-link-intent", linking ? "true" : "false");
       // Top-level same-origin navigation, not fetch or Next Link prefetch.
       window.location.assign(`/api/auth/external/${provider}/start`);
-    } catch {
+    } catch (error) {
       setPending(null);
+      if (error instanceof Error && error.message === "AUTH_SESSION_UNSUPPORTED") {
+        setError(authErrorMessage(error));
+        return;
+      }
       setError("Không thể bắt đầu đăng nhập. Vui lòng cho phép bộ nhớ phiên của trình duyệt.");
     }
   }
